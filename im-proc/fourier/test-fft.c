@@ -3,12 +3,14 @@
  * @brief test the behaviors of functions in fft module
  *
  */
+
+#define _GNU_SOURCE  
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #include <fft.h>
-#include <libgen.h>
 
 //////////////////////////////////////
 // Utilities fonctions
@@ -64,10 +66,43 @@ void floatToPnm(float *source, pnm dest, int rows, int cols)
   {
     int i, j;
     indexToPosition(index, &i, &j, rows);
-    unsigned short gray = (0.5 + source[index] / (1.0*rows*cols))*255;
+    unsigned short gray = (source[index] / (1.0*rows*cols))*255;
     for (int k = 0; k < 3; k++)
     {
       pnm_set_component(dest, i, j, k, gray);
+    }
+  }
+}
+
+void centerImageFloatAndPnm(float *source, pnm dest, int rows, int cols)
+{
+  int middleRow = (rows*1.0)/2;
+  int middleCol = (cols*1.0)/2;
+  float max = -10e30;
+  float min = 10e30;
+
+  for (int index = 0; index < (rows * cols); index++)
+  {
+    if(source[index] > max)
+    {
+      max = source[index] ;
+    }
+    if(source[index] < min)
+    {
+      min = source[index] ;
+    }
+  }
+
+  for (int index = 0; index < (rows * cols); index++)
+  {
+    int i, j;
+    indexToPosition(index, &i, &j, rows);
+    //unsigned short gray = ((source[index] - min) / (max-min))*255;
+    //unsigned short gray = pow((source[index] - min) / (max-min), 0.1f)*255;
+    unsigned short gray = pow((source[index] / max), 0.1)*255;
+    for (int k = 0; k < 3; k++)
+    {
+      pnm_set_component(dest, (i + middleRow)%rows, (j + middleCol) %cols, k, gray);
     }
   }
 }
@@ -76,8 +111,15 @@ void save_image(pnm img, char *prefix, char *name)
 {
   int output_size = strlen(prefix) + strlen(name);
   char output[output_size];
-  sprintf(output, "%s/%s%s", dirname(name), prefix, basename(name));
+
+  char *dirc, *basec, *bname, *dname;
+  dirc = strdup(name);
+  basec = strdup(name);
+  dname = dir_name(dirc);
+  bname = base_name(basec);
+  sprintf(output, "%s/%s%s", dname, prefix, bname);
   pnm_save(img, PnmRawPpm, output);
+  printf("%s saved.\n",output);
 }
 
 //////////////////////////////////////
@@ -122,8 +164,8 @@ void test_forward_backward(char *name)
 void test_reconstruction(char *name)
 {
   fprintf(stderr, "test_reconstruction: ");
-  pnm source = pnm_load(name);
 
+  pnm source = pnm_load(name);
   int rows, cols;
   unsigned short *gray = pnmTOGray(source, &rows, &cols);
 
@@ -134,13 +176,13 @@ void test_reconstruction(char *name)
   float ps[rows * cols];
   freq2spectra(rows, cols, freq_repr, as, ps);
   spectra2freq(rows, cols, as, ps, freq_repr);
-
+  
   unsigned short *newgray = backward(rows, cols, freq_repr);
 
   pnm imgReconstruct = pnm_new(cols, rows, PnmRawPpm);
   grayToPnm(newgray, imgReconstruct, rows, cols);
 
-  save_image(imgReconstruct, "FB-ASPS-", name);
+  save_image(imgReconstruct, "FB-", name);
 
   //free
   pnm_free(imgReconstruct);
@@ -159,29 +201,31 @@ void test_reconstruction(char *name)
 void test_display(char *name)
 {
   fprintf(stderr, "test_display: ");
+  
   pnm source = pnm_load(name);
-
+  
   int rows, cols;
   unsigned short *gray = pnmTOGray(source, &rows, &cols);
-/*
+
   fftw_complex *freq_repr = forward(rows, cols, gray);
 
   //Test
   float as[rows * cols];
   float ps[rows * cols];
   freq2spectra(rows, cols, freq_repr, as, ps);
+
   pnm imgAs = pnm_new(cols, rows, PnmRawPpm);
   pnm imgPs = pnm_new(cols, rows, PnmRawPpm);
-  floatToPnm(as, imgAs, rows, cols);
-  floatToPnm(ps, imgPs, rows, cols);
-  save_image(imgAs, "AS-", name);
-  save_image(imgAs, "PS-", name);
 
+  centerImageFloatAndPnm(as, imgAs, rows, cols);
+  centerImageFloatAndPnm(ps, imgPs, rows, cols);
+  save_image(imgAs, "AS-", name);
+  save_image(imgPs, "PS-", name);
+  
   //free
-  pnm_free(imgAs);
   pnm_free(imgPs);
+  pnm_free(imgAs);
   free(freq_repr);
-  */
   free(gray);
   pnm_free(source);
 
@@ -203,10 +247,10 @@ void test_add_frequencies(char *name)
 
 void run(char *name)
 {
-  test_forward_backward(name);
-  test_reconstruction(name);
-  //test_display(name);
-  //test_add_frequencies(name);
+  //test_forward_backward(name);
+  //test_reconstruction(name);
+  test_display(name);
+  test_add_frequencies(name);
 }
 
 void usage(const char *s)

@@ -40,8 +40,8 @@ void freq2spectra(int rows, int cols, fftw_complex* freq_repr, float* as, float*
 {
 	for(int i=0; i<rows*cols; i++)
   {
-		as[i]= cabs(freq_repr[i]);
-		ps[i]= carg(freq_repr[i]);
+		as[i]= cabsf(freq_repr[i]);
+		ps[i]= cargf(freq_repr[i]);
   }
 }
 
@@ -51,6 +51,6 @@ void spectra2freq(int rows, int cols, float* as, float* ps, fftw_complex* freq_r
   {
 		float r = as[i];
 		float phi = ps[i];
-    freq_repr[i] = r*cosf(phi) + I * sinf(phi);
+    freq_repr[i] = r*cosf(phi) + I * r * sinf(phi);
   }
 }
