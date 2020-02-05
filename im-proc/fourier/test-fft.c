@@ -4,13 +4,25 @@
  *
  */
 
-#define _GNU_SOURCE  
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
+#include <float.h>
+
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include <fft.h>
+
+#include <math.h>
+
+#ifndef M_PI
+    #define M_PI 3.14159265358979323846
+#endif
+
+#define VISU 0.1
+#define FOLDER_TEST "res/"
+#define FRQ_TEST 8
 
 //////////////////////////////////////
 // Utilities fonctions
@@ -21,7 +33,12 @@ void indexToPosition(int index, int *i, int *j, const int rows)
   *j = index / rows;
 }
 
-unsigned short *pnmTOGray(pnm source, int *rows, int *cols)
+int positionToIndex(int i, int j, const int rows)
+{
+  return i * rows + j;
+}
+
+unsigned short *pnmToGray(pnm source, int *rows, int *cols)
 {
   *cols = pnm_get_width(source);
   *rows = pnm_get_height(source);
@@ -60,13 +77,36 @@ void grayToPnm(unsigned short *source, pnm dest, int rows, int cols)
   }
 }
 
+void getMinMax(float *source, int rows, int cols, float* min, float* max)
+{
+  float _max = FLT_MIN;
+  float _min = FLT_MAX;
+
+  for (int index = 0; index < (rows * cols); index++)
+  {
+    if(source[index] > _max)
+    {
+      _max = source[index] ;
+    }
+    if(source[index] < _min)
+    {
+      _min = source[index] ;
+    }
+  }
+  *max = _max;
+  *min = _min;
+}
+
 void floatToPnm(float *source, pnm dest, int rows, int cols)
 {
+  float max, min;
+  getMinMax(source, rows, cols, &min, &max);
+
   for (int index = 0; index < (rows * cols); index++)
   {
     int i, j;
     indexToPosition(index, &i, &j, rows);
-    unsigned short gray = (source[index] / (1.0*rows*cols))*255;
+    unsigned short gray = ((source[index] - min) / (max-min))*255;
     for (int k = 0; k < 3; k++)
     {
       pnm_set_component(dest, i, j, k, gray);
@@ -74,52 +114,56 @@ void floatToPnm(float *source, pnm dest, int rows, int cols)
   }
 }
 
-void centerImageFloatAndPnm(float *source, pnm dest, int rows, int cols)
+void centerImageFloat(float *source, float* dest, int rows, int cols)
 {
   int middleRow = (rows*1.0)/2;
   int middleCol = (cols*1.0)/2;
-  float max = -10e30;
-  float min = 10e30;
-
-  for (int index = 0; index < (rows * cols); index++)
-  {
-    if(source[index] > max)
-    {
-      max = source[index] ;
-    }
-    if(source[index] < min)
-    {
-      min = source[index] ;
-    }
-  }
-
+ 
+  float tmp[rows*cols];
   for (int index = 0; index < (rows * cols); index++)
   {
     int i, j;
     indexToPosition(index, &i, &j, rows);
-    //unsigned short gray = ((source[index] - min) / (max-min))*255;
-    //unsigned short gray = pow((source[index] - min) / (max-min), 0.1f)*255;
-    unsigned short gray = pow((source[index] / max), 0.1)*255;
-    for (int k = 0; k < 3; k++)
-    {
-      pnm_set_component(dest, (i + middleRow)%rows, (j + middleCol) %cols, k, gray);
-    }
+    int newIndex = positionToIndex((i + middleRow)%rows, (j + middleCol) %cols, rows);
+    tmp[newIndex] = source[index];
+  }
+
+  for (int index = 0; index < (rows * cols); index++)
+  {
+    dest[index] = tmp[index];
+  }
+}
+
+void powerAFloat(float *source, float* dest, int rows, int cols, float k)
+{
+  float max, min;
+  getMinMax(source, rows, cols, &min, &max);
+
+  float tmp[rows*cols];
+  for (int index = 0; index < (rows * cols); index++)
+  {
+    float gray = pow((source[index] / max), k);
+    tmp[index] = gray;
+  }
+
+  for (int index = 0; index < (rows * cols); index++)
+  {
+    dest[index] = tmp[index];
   }
 }
 
 void save_image(pnm img, char *prefix, char *name)
 {
-  int output_size = strlen(prefix) + strlen(name);
+  //printf("%s\n", name);
+  int output_size = strlen(prefix) +strlen(FOLDER_TEST) + strlen(name);
   char output[output_size];
 
-  char *dirc, *basec, *bname, *dname;
-  dirc = strdup(name);
-  basec = strdup(name);
-  dname = dir_name(dirc);
-  bname = base_name(basec);
-  sprintf(output, "%s/%s%s", dname, prefix, bname);
+  char *bname, *dname;
+  dname = dir_name(name);
+  bname = base_name(name);
+  sprintf(output, "%s/%s%s%s", dname, FOLDER_TEST, prefix, bname);
   pnm_save(img, PnmRawPpm, output);
-  printf("%s saved.\n",output);
+  //printf("%s saved.\n",output);
 }
 
 //////////////////////////////////////
@@ -136,7 +180,7 @@ void test_forward_backward(char *name)
   pnm source = pnm_load(name);
 
   int rows, cols;
-  unsigned short *gray = pnmTOGray(source, &rows, &cols);
+  unsigned short *gray = pnmToGray(source, &rows, &cols);
 
   //Test
   fftw_complex *freq_repr = forward(rows, cols, gray);
@@ -167,7 +211,7 @@ void test_reconstruction(char *name)
 
   pnm source = pnm_load(name);
   int rows, cols;
-  unsigned short *gray = pnmTOGray(source, &rows, &cols);
+  unsigned short *gray = pnmToGray(source, &rows, &cols);
 
   fftw_complex *freq_repr = forward(rows, cols, gray);
 
@@ -182,7 +226,7 @@ void test_reconstruction(char *name)
   pnm imgReconstruct = pnm_new(cols, rows, PnmRawPpm);
   grayToPnm(newgray, imgReconstruct, rows, cols);
 
-  save_image(imgReconstruct, "FB-", name);
+  save_image(imgReconstruct, "FB-ASPS-", name);
 
   //free
   pnm_free(imgReconstruct);
@@ -205,7 +249,7 @@ void test_display(char *name)
   pnm source = pnm_load(name);
   
   int rows, cols;
-  unsigned short *gray = pnmTOGray(source, &rows, &cols);
+  unsigned short *gray = pnmToGray(source, &rows, &cols);
 
   fftw_complex *freq_repr = forward(rows, cols, gray);
 
@@ -215,11 +259,15 @@ void test_display(char *name)
   freq2spectra(rows, cols, freq_repr, as, ps);
 
   pnm imgAs = pnm_new(cols, rows, PnmRawPpm);
-  pnm imgPs = pnm_new(cols, rows, PnmRawPpm);
-
-  centerImageFloatAndPnm(as, imgAs, rows, cols);
-  centerImageFloatAndPnm(ps, imgPs, rows, cols);
+  centerImageFloat(as, as, rows, cols);
+  powerAFloat(as, as, rows, cols, VISU);
+  floatToPnm(as, imgAs, rows, cols);
   save_image(imgAs, "AS-", name);
+
+  pnm imgPs = pnm_new(cols, rows, PnmRawPpm);
+  centerImageFloat(ps, ps, rows, cols);
+  powerAFloat(ps, ps, rows, cols, VISU);
+  floatToPnm(ps, imgPs, rows, cols);
   save_image(imgPs, "PS-", name);
   
   //free
@@ -241,14 +289,66 @@ void test_display(char *name)
 void test_add_frequencies(char *name)
 {
   fprintf(stderr, "test_add_frequencies: ");
-  (void)name;
+
+   pnm source = pnm_load(name);
+  int rows, cols;
+  unsigned short *gray = pnmToGray(source, &rows, &cols);
+
+  fftw_complex *freq_repr = forward(rows, cols, gray);
+
+  //Test
+  float as[rows * cols];
+  float ps[rows * cols];
+  freq2spectra(rows, cols, freq_repr, as, ps);
+
+  // Modif
+  float min, max;
+  getMinMax(as, rows, cols, &min, &max);
+  centerImageFloat(as, as, rows, cols);
+  for (int index = 0; index < (rows * cols); index++)
+  {
+    as[index] = pow(as[index] / max,  VISU);
+    int i, j;
+    indexToPosition(index, &i, &j, rows);
+    float si = 0.25*max *sinf(2* M_PI * FRQ_TEST * i );
+    float sj = 0.25*max *sinf(2* M_PI * FRQ_TEST * j );
+    as[index] = as[index] /*+ (si + sj)*/;
+    as[index] = pow(as[index], 1/ VISU)* max;
+  }
+  centerImageFloat(as, as, rows, cols);
+
+  //AS save
+  float asVisu[rows * cols];
+  centerImageFloat(as, asVisu, rows, cols);
+  powerAFloat(asVisu, asVisu, rows, cols, VISU);
+
+  pnm imgAs = pnm_new(cols, rows, PnmRawPpm);
+  floatToPnm(asVisu, imgAs, rows, cols);
+  save_image(imgAs, "FAS-", name);
+  //Free pnm As
+  free(imgAs);
+
+  //Reconstruct
+  spectra2freq(rows, cols, as, ps, freq_repr);
+  unsigned short *newgray = backward(rows, cols, freq_repr);
+  pnm imgReconstruct = pnm_new(cols, rows, PnmRawPpm);
+  grayToPnm(newgray, imgReconstruct, rows, cols);
+  save_image(imgReconstruct, "FREQ-", name);
+
+  //free
+  pnm_free(imgReconstruct);
+  free(newgray);
+  free(freq_repr);
+  free(gray);
+  pnm_free(source);
+
   fprintf(stderr, "OK\n");
 }
 
 void run(char *name)
 {
-  //test_forward_backward(name);
-  //test_reconstruction(name);
+  test_forward_backward(name);
+  test_reconstruction(name);
   test_display(name);
   test_add_frequencies(name);
 }
