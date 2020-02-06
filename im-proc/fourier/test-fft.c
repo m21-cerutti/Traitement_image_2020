@@ -307,13 +307,13 @@ void test_add_frequencies(char *name)
   centerImageFloat(as, as, rows, cols);
   for (int index = 0; index < (rows * cols); index++)
   {
-    as[index] = pow(as[index] / max,  VISU);
+    //as[index] = pow(as[index] / max,  VISU);
     int i, j;
     indexToPosition(index, &i, &j, rows);
-    float si = 0.25*max *sinf(2* M_PI * FRQ_TEST * i );
-    float sj = 0.25*max *sinf(2* M_PI * FRQ_TEST * j );
-    as[index] = as[index] /*+ (si + sj)*/;
-    as[index] = pow(as[index], 1/ VISU)* max;
+    float si = /*as[index] */ 0.25 * max *sinf(2* M_PI * FRQ_TEST * (i-rows/2.0) /*+ ps[i]*/);
+    float sj = /*as[index] */ 0.25 * max *sinf(2* M_PI * FRQ_TEST * (j-cols/2.0) /*+ ps[i]*/);
+    as[index] = as[index] + (si + sj);
+    //as[index] = pow(as[index], 1/ VISU)* max;
   }
   centerImageFloat(as, as, rows, cols);
 
@@ -351,6 +351,7 @@ void run(char *name)
   test_reconstruction(name);
   test_display(name);
   test_add_frequencies(name);
+fftw_cleanup();
 }
 
 void usage(const char *s)
