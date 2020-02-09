@@ -31,7 +31,16 @@ unsigned short *backward(int rows, int cols, fftw_complex* freq_repr)
   unsigned short *grayReal = malloc(sizeof(unsigned short)*rows*cols);
   for (int i = 0; i<(rows*cols); i++)
   {
-      grayReal[i] = creal(grayImage[i])/(rows*cols);
+    float value = crealf(grayImage[i])/(rows*cols);
+    if (value > 255.f)
+    {
+      value = 255.f;
+    }
+    if (value < 0.f)
+    {
+      value = 0.f;
+    }
+    grayReal[i] = (unsigned short)value;
   }
   return grayReal;
 }

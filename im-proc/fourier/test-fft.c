@@ -20,9 +20,8 @@
     #define M_PI 3.14159265358979323846
 #endif
 
-#define VISU 0.1
+#define VISU 0.2
 #define FOLDER_TEST "res/"
-#define FRQ_TEST 8
 
 //////////////////////////////////////
 // Utilities fonctions
@@ -97,16 +96,35 @@ void getMinMax(float *source, int rows, int cols, float* min, float* max)
   *min = _min;
 }
 
-void floatToPnm(float *source, pnm dest, int rows, int cols)
+void normalizeFloat(float *source, float* dest, int rows, int cols, float newMin, float newMax)
 {
+  float tmp[rows*cols];
+
   float max, min;
   getMinMax(source, rows, cols, &min, &max);
 
   for (int index = 0; index < (rows * cols); index++)
   {
+    float norm = (newMax - newMin)/(max - min) * source[index] + (newMin * max - newMax * min) / (max-min);
+    tmp[index] = norm;
+  }
+
+  for (int index = 0; index < (rows * cols); index++)
+  {
+    dest[index] = tmp[index];
+  }
+}
+
+void floatToPnm(float *source, pnm dest, int rows, int cols)
+{
+  normalizeFloat(source, source, rows, cols, 0.f, 1.f);
+
+  for (int index = 0; index < (rows * cols); index++)
+  {
     int i, j;
     indexToPosition(index, &i, &j, rows);
-    unsigned short gray = ((source[index] - min) / (max-min))*255;
+    unsigned short gray = source[index] *254;
+    
     for (int k = 0; k < 3; k++)
     {
       pnm_set_component(dest, i, j, k, gray);
@@ -305,15 +323,16 @@ void test_add_frequencies(char *name)
   float min, max;
   getMinMax(as, rows, cols, &min, &max);
   centerImageFloat(as, as, rows, cols);
-  for (int index = 0; index < (rows * cols); index++)
+  for (int i = -8; i< 9; i+=16)
   {
-    //as[index] = pow(as[index] / max,  VISU);
-    int i, j;
-    indexToPosition(index, &i, &j, rows);
-    float si = /*as[index] */ 0.25 * max *sinf(2* M_PI * FRQ_TEST * (i-rows/2.0) /*+ ps[i]*/);
-    float sj = /*as[index] */ 0.25 * max *sinf(2* M_PI * FRQ_TEST * (j-cols/2.0) /*+ ps[i]*/);
-    as[index] = as[index] + (si + sj);
-    //as[index] = pow(as[index], 1/ VISU)* max;
+    int index =positionToIndex(i + rows/2, cols/2, rows);
+    as[index] =  0.25 * max;
+    
+  }
+  for (int j = -8; j< 9; j+=16)
+  {
+    int index =positionToIndex(rows/2, j + cols/2, rows);
+    as[index] =  0.25 * max;
   }
   centerImageFloat(as, as, rows, cols);
 
