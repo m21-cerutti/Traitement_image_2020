@@ -112,7 +112,7 @@ void convolution(int factor, int rows, int cols, filter_func filter, int domain[
               //Border ignored (padding zero)
               if(jc > 0 && jc < cols && ic > 0 && ic < rows)
               {
-                unsigned short val = pnm_get_component(in, ii, jc, k);
+                unsigned short val = pnm_get_component(in, ic, jc, k);
                 pixel[k] += val * filter(jc - ji);
               }
             }
