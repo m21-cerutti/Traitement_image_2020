@@ -50,7 +50,8 @@ void save_image(pnm img, char *prefix, char *name)
 
 //////////////////////////////////////
 // Filter
-typedef double (filter_func*)(int x); 
+
+typedef double (*filter_func)(int x); 
 
 double box (int x)
 {
@@ -94,15 +95,15 @@ void convolution(int factor, int rows, int cols, filter_func filter, int domain[
     {
       int ji = jo/ factor;
 
-      // 3 Channels convolution
+      // 3 Channels
       double pixel[3] ={0, 0, 0};
       for (int k = 0; k < 3; k++)
       {
         // Convolution
-        for (int jc = (ji + domain[0]); jc <= (ji +domain[1]); jc++}
+        for (int jc = (ji + domain[0]); jc <= (ji +domain[1]); jc++)
         {
           unsigned short val = pnm_get_component(in, ii, jc, k);
-          pixel[k] += val * filter(jc -ji);
+          pixel[k] += val * filter(jc - ji);
         }
 
         // Out
@@ -124,31 +125,42 @@ void run(int factor, char* filterName, char* ims, char* imd) {
   getSizePnm(input, &rows, &cols);
 
   filter_func f;
-  if (strcmp(string, "box") == 0) 
+  int domain[2];
+  if (strcmp(filterName, "box") == 0) 
   {
-    f = box;
+    f = (filter_func)box;
+    domain[0] = -1;
+    domain[1] = 1;
   } 
-  else if (strcmp(string, "tent") == 0)
+  else if (strcmp(filterName, "tent") == 0)
   {
-    f = tent;
+    f = (filter_func)tent;
+    domain[0] = -1;
+    domain[1] = 1;
   }
-  else if (strcmp(string, "bell") == 0)
+  else if (strcmp(filterName, "bell") == 0)
   {
-    f = bell;
+    f = (filter_func)bell;
+
+    domain[0] = -2;
+    domain[1] = 2;
   }
-  else if (strcmp(string, "mitch") == 0)
+  else if (strcmp(filterName, "mitch") == 0)
   {
-    f = mitchellNetravali;
+    f = (filter_func)mitchellNetravali;
+
+    domain[0] = -2;
+    domain[1] = 2;
   }
   else
   {
-    fprintf(stderr, "Filter %s not known. Please use box, tent, bell or mitch.\n");
+    fprintf(stderr, "Filter %s not known. Please use box, tent, bell or mitch.\n", filterName);
     exit(1);
   }
 
   pnm output = pnm_new(factor * cols, factor * rows, PnmRawPpm);
 
-  convolution(factor, rows, cols, f, input, output);
+  convolution(factor, rows, cols, f, domain,  input, output);
 
   save_image(output, "", imd);
 
