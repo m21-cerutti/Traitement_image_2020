@@ -80,11 +80,14 @@ double bell (int x)
 double mitchellNetravali (int x)
 {
   if (-1 < x && x < 1)
-    return 7/6 * pow(abs(x),3) - 2 * pow(x,2) + 8/9;
+    return 7./6. * pow(abs(x),3.) - 2. * pow(x,2.) + 8./9.;
   if ((-2 < x && x < -1) || (1 < x && x < 2))
-    return -7/18 * pow(abs(x),3) + 2 * pow(x,2) - 10/3 * abs(x) + 16/9;
+    return -7./18. * pow(abs(x),3.) + 2. * pow(x,2.) - 10./3. * abs(x) + 16./9.;
   return 0;
 }
+
+//////////////////////////////////////
+// Convolution
 
 void convolution(int factor, int rows, int cols, filter_func filter, int domain[2], pnm in, pnm out) 
 {
@@ -102,7 +105,7 @@ void convolution(int factor, int rows, int cols, filter_func filter, int domain[
         // Convolution
         for (int jc = (ji + domain[0]); jc <= (ji +domain[1]); jc++)
         {
-          //Border
+          //Border ignored (padding zero)
           if(jc > 0 && jc < cols)
           {
             unsigned short val = pnm_get_component(in, ii, jc, k);
@@ -120,6 +123,9 @@ void convolution(int factor, int rows, int cols, filter_func filter, int domain[
   }
   
 }
+
+//////////////////////////////////////
+// Main
 
 void run(int factor, char* filterName, char* ims, char* imd) {
   (void)(filterName);
@@ -153,8 +159,8 @@ void run(int factor, char* filterName, char* ims, char* imd) {
   {
     f = (filter_func)mitchellNetravali;
 
-    domain[0] = -2;
-    domain[1] = 2;
+    domain[0] = -3;
+    domain[1] = 3;
   }
   else
   {
