@@ -89,9 +89,9 @@ double mitchellNetravali (int x)
 //////////////////////////////////////
 // Convolution
 
+// TODO Change pbnm to double[] then copy to pnm. Use function normalize on out
 void convolution(int factor, int rows, int cols, filter_func filter, int domain[2], pnm in, pnm out) 
 {
-
   double max[3] ={0, 0, 0};
   for (int io = 0; io < (factor * rows); io++)
   {
@@ -121,7 +121,7 @@ void convolution(int factor, int rows, int cols, filter_func filter, int domain[
           // Out
           for (int k = 0; k < 3; k++)
           {
-            //Instead trunc, normalyse
+            //TODO Instead trunc, normalize OR copy on double[] and then normalize function
             if(pixel[k] < 0) pixel[k] = 0;
             if(pixel[k] > 255) pixel[k] = 255;
             pnm_set_component(out, io, jo, k, pixel[k]);
