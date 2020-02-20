@@ -50,24 +50,23 @@ void save_image(pnm img, char *prefix, char *name)
 
 //////////////////////////////////////
 // Filter
-double
-box (int x)
+typedef double (filter_func*)(int x); 
+
+double box (int x)
 {
     if (x >= -0.5 && x < 0.5)
       return 1;
     return 0;
 }
 
-double
-tent (int x)
+double tent (int x)
 {
     if (x >= -1 && x <= 1)
       return 1 - abs(x);
     return 0;
 }
 
-double
-bell (int x)
+double bell (int x)
 {
     int absX = abs(x);
     if (absX <= 0.5)
@@ -77,8 +76,7 @@ bell (int x)
     return 0;
 }
 
-double
-mitchellNetravali (int x)
+double mitchellNetravali (int x)
 {
   if (-1 < x && x < 1)
     return 7/6 * pow(abs(x),3) - 2 * pow(x,2) + 8/9;
@@ -87,20 +85,72 @@ mitchellNetravali (int x)
   return 0;
 }
 
-void
-run(int factor, char* filterName, char* ims, char* imd) {
+void convolution(int factor, int rows, int cols, filter_func filter, int domain[2], pnm in, pnm out) 
+{
+  for (int io = 0; io < (factor * rows); io++)
+  {
+    int ii = io/ factor;
+    for (int jo = 0; jo < (factor * cols); jo++)
+    {
+      int ji = jo/ factor;
+
+      // 3 Channels convolution
+      double pixel[3] ={0, 0, 0};
+      for (int k = 0; k < 3; k++)
+      {
+        // Convolution
+        for (int jc = (ji + domain[0]); jc <= (ji +domain[1]); jc++}
+        {
+          unsigned short val = pnm_get_component(in, ii, jc, k);
+          pixel[k] += val * filter(jc -ji);
+        }
+
+        // Out
+        for (int k = 0; k < 3; k++)
+        {
+          pnm_set_component(out, io, jo, k, pixel[k]);
+        }
+      }
+    }
+  }
+  
+}
+
+void run(int factor, char* filterName, char* ims, char* imd) {
   (void)(filterName);
 	pnm input = pnm_load(ims);
 
-	int inputWidth = pnm_get_width(input);
-	int inputHeight = pnm_get_height(input);
+	int cols, rows;
+  getSizePnm(input, &rows, &cols);
 
-	int outputWidth = inputWidth * factor;
-	int outputHeight = inputHeight * factor;
+  filter_func f;
+  if (strcmp(string, "box") == 0) 
+  {
+    f = box;
+  } 
+  else if (strcmp(string, "tent") == 0)
+  {
+    f = tent;
+  }
+  else if (strcmp(string, "bell") == 0)
+  {
+    f = bell;
+  }
+  else if (strcmp(string, "mitch") == 0)
+  {
+    f = mitchellNetravali;
+  }
+  else
+  {
+    fprintf(stderr, "Filter %s not known. Please use box, tent, bell or mitch.\n");
+    exit(1);
+  }
 
-	pnm output = pnm_new(outputWidth, outputHeight, PnmRawPpm);
+  pnm output = pnm_new(factor * cols, factor * rows, PnmRawPpm);
 
-  pnm_save(output, PnmRawPpm, imd);
+  convolution(factor, rows, cols, f, input, output);
+
+  save_image(output, "", imd);
 
   pnm_free(input);
   pnm_free(output);
