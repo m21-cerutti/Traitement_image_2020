@@ -98,30 +98,32 @@ void convolution(int factor, int rows, int cols, filter_func filter, int domain[
     {
       int ji = jo/ factor;
 
-      // 3 Channels
-      double pixel[3] ={0, 0, 0};
-      for (int k = 0; k < 3; k++)
-      {
-        // Convolution
-        for (int jc = (ji + domain[0]); jc <= (ji +domain[1]); jc++)
-        {
-          //Border ignored (padding zero)
-          if(jc > 0 && jc < cols)
-          {
-            unsigned short val = pnm_get_component(in, ii, jc, k);
-            pixel[k] += val * filter(jc - ji);
-          }
-        }
-
-        // Out
+        // 3 Channels
+        double pixel[3] ={0, 0, 0};
         for (int k = 0; k < 3; k++)
         {
-          pnm_set_component(out, io, jo, k, pixel[k]);
+          // Convolution
+          for (int ic = (ii + domain[0]); ic <= (ii + domain[1]); ic++)
+          {
+            for (int jc = (ji + domain[0]); jc <= (ji +domain[1]); jc++)
+            {
+              //Border ignored (padding zero)
+              if(jc > 0 && jc < cols && ic > 0 && ic < rows)
+              {
+                unsigned short val = pnm_get_component(in, ii, jc, k);
+                pixel[k] += val * filter(jc - ji);
+              }
+            }
+          }
+
+          // Out
+          for (int k = 0; k < 3; k++)
+          {
+            pnm_set_component(out, io, jo, k, pixel[k]);
+          }
         }
-      }
     }
   }
-  
 }
 
 //////////////////////////////////////
