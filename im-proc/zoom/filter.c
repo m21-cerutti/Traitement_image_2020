@@ -48,6 +48,8 @@ void save_image(pnm img, char *prefix, char *name)
   pnm_save(img, PnmRawPpm, output);
 }
 
+
+
 //////////////////////////////////////
 // Filter
 
@@ -56,20 +58,20 @@ typedef double (*filter_func)(int x);
 double box (int x)
 {
     if (x >= -0.5 && x < 0.5)
-      return 1;
-    return 0;
+      return 1.0;
+    return 0.0;
 }
 
 double tent (int x)
 {
     if (x >= -1 && x <= 1)
-      return 1 - abs(x);
+      return 1.0 - abs(x);
     return 0;
 }
 
 double bell (int x)
 {
-    int absX = abs(x);
+    double absX = abs(x);
     if (absX <= 0.5)
       return 0.75 - pow(x,2);
     if (0.5 < absX && absX < 1.5)
@@ -86,42 +88,55 @@ double mitchellNetravali (int x)
   return 0;
 }
 
+void rotate(int rows, int cols, pnm in, pnm out) 
+{
+  for (int i = 0; i < (rows); i++)
+  {
+    for (int j = 0; j < (cols); j++)
+    {
+      for (int channel = 0; channel < 3; channel++)
+      {
+        unsigned short val = pnm_get_component(in, i, j, channel);
+        pnm_set_component(out, j, i, channel, val);
+      }
+    }
+  }
+}
+
+
 //////////////////////////////////////
 // Convolution
 
-void convolution(int factor, int rows, int cols, filter_func filter, int domain[2], pnm in, pnm out) 
+void convolution1D(int factor, int rows, int cols, filter_func filter, int domain[2], pnm in, pnm out) 
 {
-  for (int io = 0; io < (factor * rows); io++)
+  for (int i = 0; i < (rows); i++)
   {
-    int ii = io/ factor;
     for (int jo = 0; jo < (factor * cols); jo++)
     {
-      int ji = jo/ factor;
+      int ji = jo / (factor*1.0);
 
       // 3 Channels
-      double pixel[3] ={0, 0, 0};
+      double pixel[3] ={0., 0., 0.};
       for (int k = 0; k < 3; k++)
       {
         // Convolution
         for (int jc = (ji + domain[0]); jc <= (ji +domain[1]); jc++)
         {
           //Border ignored (padding zero)
-          if(jc > 0 && jc < cols)
+          if(jc >= 0 && jc < cols)
           {
-            unsigned short val = pnm_get_component(in, ii, jc, k);
-            pixel[k] += val * filter(jc - ji);
+            unsigned short val = pnm_get_component(in, i, jc, k);
+            pixel[k] += (double)val * filter(jc - ji);
           }
         }
-
         // Out
         for (int k = 0; k < 3; k++)
         {
-          pnm_set_component(out, io, jo, k, pixel[k]);
+          pnm_set_component(out, i, jo, k, (unsigned short)pixel[k]);
         }
       }
     }
   }
-  
 }
 
 //////////////////////////////////////
@@ -168,14 +183,28 @@ void run(int factor, char* filterName, char* ims, char* imd) {
     exit(1);
   }
 
-  pnm output = pnm_new(factor * cols, factor * rows, PnmRawPpm);
+  pnm tmp = pnm_new(cols * factor, rows, PnmRawPpm);
+  convolution1D(factor, rows, cols, f, domain,  input, tmp);
 
-  convolution(factor, rows, cols, f, domain,  input, output);
+  save_image(tmp, "", "test1.ppm");
+
+  pnm r_tmp = pnm_new(cols, rows * factor, PnmRawPpm);
+  rotate(rows, cols * factor, tmp, r_tmp);
+
+  save_image(r_tmp, "", "test2.ppm");
+
+  pnm tmp3 = pnm_new(factor * cols, factor * rows, PnmRawPpm);
+  convolution1D(factor, rows * factor, cols, f, domain, r_tmp, tmp3);
+
+  save_image(tmp3, "", "test3.ppm");
+
+  pnm output = pnm_new(factor * cols, factor * rows, PnmRawPpm);
+  rotate(rows * factor, cols * factor, tmp3, output);
 
   save_image(output, "", imd);
 
   pnm_free(input);
-  pnm_free(output);
+  //pnm_free(output);
 }
 
 void
