@@ -88,7 +88,17 @@ double mitchellNetravali (int x)
   return 0;
 }
 
-void rotate(int rows, int cols, pnm in, pnm out) 
+double double_get_component(double* source, int rows, int i, int j, int channel)
+{
+  return source[i * (rows + channel) + j + channel];
+}
+
+void double_set_component(double* source, int rows, int i, int j, int channel, double value)
+{
+  source[i * (rows + channel) + j + channel] = value;
+}
+
+void rotate(int rows, int cols, double* in, double* out) 
 {
   for (int i = 0; i < (rows); i++)
   {
@@ -96,18 +106,47 @@ void rotate(int rows, int cols, pnm in, pnm out)
     {
       for (int channel = 0; channel < 3; channel++)
       {
-        unsigned short val = pnm_get_component(in, i, j, channel);
-        pnm_set_component(out, j, i, channel, val);
+        unsigned short val = double_get_component(in, rows, i, j, channel);
+        double_set_component(out, rows, j, i, channel, val);
       }
     }
   }
 }
 
+void pnmToDouble(pnm source, double *out, int rows, int cols)
+{
+  for (int i = 0; i < rows; i++)
+  {
+    for (int j = 0; j < cols; j++)
+    {
+      for (int channel = 0; channel < 3; channel++)
+      {
+        unsigned short val = pnm_get_component(source, i, j, channel);
+        double_set_component(out, rows, i, j, channel, val);
+      }
+    }
+  }
+}
+
+void doubleToPnm(double* source, pnm out, int rows, int cols)
+{
+  for (int i = 0; i < rows; i++)
+  {
+    for (int j = 0; j < cols; j++)
+    {
+      for (int channel = 0; channel< 3; channel++)
+      {
+        double val = double_get_component(source, rows, i, j, channel);
+        pnm_set_component(out, i, j, channel, val);
+      }
+    }
+  }
+}
 
 //////////////////////////////////////
 // Convolution
 
-void convolution1D(int factor, int rows, int cols, filter_func filter, int domain[2], pnm in, pnm out) 
+void convolution1D(int factor, int rows, int cols, filter_func filter, int domain[2], double* in, double* out) 
 {
   for (int i = 0; i < (rows); i++)
   {
@@ -125,15 +164,16 @@ void convolution1D(int factor, int rows, int cols, filter_func filter, int domai
           //Border ignored (padding zero)
           if(jc >= 0 && jc < cols)
           {
-            unsigned short val = pnm_get_component(in, i, jc, k);
+            double val = double_get_component(in, rows, i, jc, k);
             pixel[k] += (double)val * filter(jc - ji);
           }
         }
         // Out
         for (int k = 0; k < 3; k++)
         {
-          pnm_set_component(out, i, jo, k, (unsigned short)pixel[k]);
+          double_set_component(out, rows, i, jo, k, pixel[k]);
         }
+      }
     }
   }
 }
@@ -141,7 +181,8 @@ void convolution1D(int factor, int rows, int cols, filter_func filter, int domai
 //////////////////////////////////////
 // Main
 
-void run(int factor, char* filterName, char* ims, char* imd) {
+void run(int factor, char* filterName, char* ims, char* imd) 
+{
   (void)(filterName);
 	pnm input = pnm_load(ims);
 
@@ -182,28 +223,27 @@ void run(int factor, char* filterName, char* ims, char* imd) {
     exit(1);
   }
 
-  pnm tmp = pnm_new(cols * factor, rows, PnmRawPpm);
-  convolution1D(factor, rows, cols, f, domain,  input, tmp);
+  double dinput [cols * rows * 3];
+  pnmToDouble(input, dinput, rows, cols);
 
-  save_image(tmp, "", "test1.ppm");
+  double tmp [cols * factor * rows * 3];
+  convolution1D(factor, rows, cols, f, domain,  dinput, tmp);
 
-  pnm r_tmp = pnm_new(cols, rows * factor, PnmRawPpm);
+  double r_tmp[cols * rows * factor * 3];
   rotate(rows, cols * factor, tmp, r_tmp);
 
-  save_image(r_tmp, "", "test2.ppm");
-
-  pnm tmp3 = pnm_new(factor * cols, factor * rows, PnmRawPpm);
+  double tmp3[factor * cols * factor * rows * 3];
   convolution1D(factor, rows * factor, cols, f, domain, r_tmp, tmp3);
 
-  save_image(tmp3, "", "test3.ppm");
+  double doutput[factor * cols * factor * rows * 3];
+  rotate(rows * factor, cols * factor, tmp3, doutput);
 
   pnm output = pnm_new(factor * cols, factor * rows, PnmRawPpm);
-  rotate(rows * factor, cols * factor, tmp3, output);
-
+  doubleToPnm( doutput, output, rows * factor, cols * factor);
   save_image(output, "", imd);
 
   pnm_free(input);
-  //pnm_free(output);
+  pnm_free(output);
 }
 
 void
