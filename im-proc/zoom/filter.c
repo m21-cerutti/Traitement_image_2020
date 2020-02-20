@@ -134,7 +134,6 @@ void convolution1D(int factor, int rows, int cols, filter_func filter, int domai
         {
           pnm_set_component(out, i, jo, k, (unsigned short)pixel[k]);
         }
-      }
     }
   }
 }
