@@ -16,43 +16,95 @@
 
 #define D 3
 
-float RGB2LMS[D][D] = {
-  {0.3811, 0.5783, 0.0402},
-  {0.1967, 0.7244, 0.0782},
-  {0.0241, 0.1288, 0.8444}
+double RGB2LMS[3*3] = {
+  0.3811, 0.5783, 0.0402,
+  0.1967, 0.7244, 0.0782,
+  0.0241, 0.1288, 0.8444
 };
 
-float LMS2RGB[D][D] = {
-  {4.4679, -3.5873, 0.1193},
-  {-1.2186, 2.3809, -0.1624},
-  {0.0497, -0.2439, 1.2045}
+double LMS2RGB[3*3] = {
+  4.4679, -3.5873, 0.1193,
+  -1.2186, 2.3809, -0.1624,
+  0.0497, -0.2439, 1.2045
+};
+
+double LAB2LMS[3*3] = {
+  sqrt(3)/3, sqrt(6)/6, sqrt(2)/2,
+  sqrt(3)/3, sqrt(6)/6, -sqrt(2)/2,
+  sqrt(3)/3, -sqrt(6)/3, 0
+};
+
+double LMS2LAB[3*3] = {
+  1/sqrt(3), 1/sqrt(3), 1/sqrt(3),
+  1/sqrt(6), 1/sqrt(6), -1/sqrt(6),
+  1/sqrt(2), -sqrt(2), 0
+};
+
+//////////////////////
+void indexToPosition(int index, int *i, int *j, const int rows)
+{
+  *i = index % rows;
+  *j = index / rows;
 }
 
-float LAB2LMS[D][D] = {
-  {sqrt(3)/3, sqrt(6)/6, sqrt(2)/2},
-  {sqrt(3)/3, sqrt(6)/6, -sqrt(2)/2},
-  {sqrt(3)/3, -sqrt(6)/3, 0}
+int positionToIndex(int i, int j, const int rows)
+{
+  return i * rows + j;
 }
 
-float LMS2LAB[D][D] = {
-  {1/sqrt(3), 1/sqrt(3), 1/sqrt(3)},
-  {1/sqrt(6), 1/sqrt(6), -1/sqrt(6)},
-  {1/sqrt(2), -sqrt(2), 0}
-}
+//////////////////////
 
-void matrixProduct(float* M1, float* M2, float* res) {
-  for (int rows = 0; rows < D; rows++)
+void matrixProduct(double* M1, int rows1, int cols1, double* M2, int rows2, int cols2, double* out) 
+{
+  if( cols1 != rows2)
   {
-    res[rows][cols] = 0;
-    for (int cols = 0; cols < D; cols++)
+    fprintf(stderr, "Error matrix.");
+    exit(1);
+  }
+
+  for (int io = 0; io < rows1; io++)
+  {
+    for (int jo = 0; jo < cols2; jo++)
     {
-      res[rows][cols] += M1[rows][cols] * M2[rows][cols];
+      int indexo = positionToIndex(io, jo, rows1);
+      out[indexo] = 0;
+    }
+  }
+
+  for (int io = 0; io < rows1; io++)
+  {
+    for (int jo = 0; jo < cols2; jo++)
+    {
+      int k1 =0, k2 =0;
+      for (; k1 < cols1 && k2 < rows2; k1++, k2++)
+      {
+        int indexo = positionToIndex(io, jo, rows1);
+        int index1 = positionToIndex(io, k1, rows1);
+        int index2 = positionToIndex(k2, jo, rows2);
+
+        out[indexo] += M1[index1] * M2[index2];
+      }
     }
   }
 }
 
-void
-process(char *ims, char *imt, char* imd){
+void printMatrix(double* M, int rows, int cols)
+{
+  for (int i = 0; i < rows; i++)
+  {
+    printf("[ ");
+    for (int j = 0; j < cols; j++)
+    {
+      int index = positionToIndex(i, j, rows);
+      printf("\t%lf\t", M[index]);
+    }
+    printf(" ]\n");
+  }
+  printf("\n");
+}
+
+/*
+void process(char *ims, char *imt, char* imd){
   pnm input = pnm_load(ims);
 
   int cols = pnm_get_width(input);
@@ -66,8 +118,8 @@ process(char *ims, char *imt, char* imd){
   for (int channel = 0; channel < 3; channel++)
   {
     pnm_get_channel(input, color, channel);
-    matrixProduct(RGB2LMS, color, res);
-    matrixProduct(LMS2RGB, res, color);
+    //matrixProduct(RGB2LMS, color, res);
+    //matrixProduct(LMS2RGB, res, color);
     pnm_set_channel(output, color, channel);
   }
 
@@ -77,17 +129,39 @@ process(char *ims, char *imt, char* imd){
   //(void) imd;
 
 }
-
-void
-usage (char *s){
+*/
+void usage (char *s){
   fprintf(stderr, "Usage: %s <ims> <imt> <imd> \n", s);
   exit(EXIT_FAILURE);
 }
 
 #define PARAM 3
-int
-main(int argc, char *argv[]){
+int main(int argc, char *argv[]){
   if (argc != PARAM+1) usage(argv[0]);
-  process(argv[1], argv[2], argv[3]);
+  //process(argv[1], argv[2], argv[3]);
+
+ /*
+  printMatrix(RGB2LMS, D, D);
+  printMatrix(LMS2RGB, D, D);
+  printMatrix(LAB2LMS, D, D);
+  printMatrix(LMS2LAB, D, D);
+  
+
+  double M[3] = {
+  1., 
+  1., 
+  1.,   
+  };
+
+  double R[3] = {
+  0., 
+  0., 
+  0.,   
+  };
+  
+  matrixProduct(RGB2LMS, D, D, M, D, 1, R);
+  */
+
+  printMatrix(R, 3, 1);
   return EXIT_SUCCESS;
 }
