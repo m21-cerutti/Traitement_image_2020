@@ -7,10 +7,15 @@
  *        Applied Perception, Vol 21, No 5, pp 34-41, September - October 2001
  */
 
-#include <float.h>
-#include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <float.h>
+
+#include <sys/stat.h>
+#include <sys/types.h>
+
+#include <math.h>
 
 #include <bcl.h>
 
@@ -41,6 +46,7 @@ double LMS2LAB[3*3] = {
 };
 
 //////////////////////
+
 void indexToPosition(int index, int *i, int *j, const int rows)
 {
   *i = index % rows;
@@ -50,6 +56,54 @@ void indexToPosition(int index, int *i, int *j, const int rows)
 int positionToIndex(int i, int j, const int rows)
 {
   return i * rows + j;
+}
+
+void save_image(pnm img, char *prefix, char *name)
+{
+  int output_size = strlen(prefix) +strlen(name);
+  char output[output_size];
+
+  char *bname, *dname;
+  dname = dir_name(name);
+  bname = base_name(name);
+  sprintf(output, "%s/%s%s", dname, prefix, bname);
+  pnm_save(img, PnmRawPpm, output);
+}
+//////////////////////
+
+#define NB_CHANNELS 3
+
+typedef struct s_Pixel
+{
+  double data[NB_CHANNELS];
+} Pixel;
+
+void pnmToImageArray(pnm source, Pixel* dest, int rows, int cols)
+{
+  for (int index = 0; index < (rows * cols); index++)
+  {
+    for (int k = 0; k < 3; k++)
+    {
+      int i, j;
+      indexToPosition(index, &i, &j, rows);
+      unsigned short val = pnm_get_component(source, i, j, k);
+      dest[index].data[k] = val;
+    }
+  }
+}
+
+void imageArrayToPnm(Pixel* source, pnm dest, int rows, int cols)
+{
+  for (int index = 0; index < (rows * cols); index++)
+  {
+    for (int k = 0; k < 3; k++)
+    {
+      int i, j;
+      indexToPosition(index, &i, &j, rows);
+      unsigned short val = fmax(0, fmin(255, source[index].data[k]));
+      pnm_set_component(dest, i, j, k, val);
+    }
+  }
 }
 
 //////////////////////
@@ -103,33 +157,39 @@ void printMatrix(double* M, int rows, int cols)
   printf("\n");
 }
 
-/*
+//////////////////////
+
 void process(char *ims, char *imt, char* imd){
   pnm input = pnm_load(ims);
 
   int cols = pnm_get_width(input);
   int rows = pnm_get_height(input);
 
-  pnm output = pnm_new(cols, rows, PnmRawPpm);
 
-  float res[cols][rows][3];
-  unsigned short *color = malloc(sizeof(unsigned short) * rows * cols);
+  Pixel colors[rows * cols* NB_CHANNELS];
+  pnmToImageArray(input, colors, rows, cols);
+  Pixel res[rows * cols* NB_CHANNELS];
 
-  for (int channel = 0; channel < 3; channel++)
+  for (int i = 0; i < rows; i++)
   {
-    pnm_get_channel(input, color, channel);
-    //matrixProduct(RGB2LMS, color, res);
-    //matrixProduct(LMS2RGB, res, color);
-    pnm_set_channel(output, color, channel);
+    for (int j = 0; j < cols; j++)
+    {
+      for (int k = 0; k < 3; k++)
+      {
+        int index = positionToIndex(i, j, rows);
+        matrixProduct(RGB2LMS, D, D, colors[index].data, D, 1, res[index].data);
+        matrixProduct(LMS2RGB, D, D, res[index].data, D, 1, colors[index].data);
+      }
+    }
   }
-
-  pnm_save(output,PnmRawPpm, imd);
-  //(void) ims;
-  (void) imt;
-  //(void) imd;
-
+  (void)imt;
+  pnm output = pnm_new(cols, rows, PnmRawPpm);
+  imageArrayToPnm(colors, output, rows, cols);
+  save_image(output, "", imd);
+  pnm_free(input);
+  pnm_free(output);
 }
-*/
+
 void usage (char *s){
   fprintf(stderr, "Usage: %s <ims> <imt> <imd> \n", s);
   exit(EXIT_FAILURE);
@@ -138,7 +198,7 @@ void usage (char *s){
 #define PARAM 3
 int main(int argc, char *argv[]){
   if (argc != PARAM+1) usage(argv[0]);
-  //process(argv[1], argv[2], argv[3]);
+  process(argv[1], argv[2], argv[3]);
 
  /*
   printMatrix(RGB2LMS, D, D);
@@ -160,8 +220,7 @@ int main(int argc, char *argv[]){
   };
   
   matrixProduct(RGB2LMS, D, D, M, D, 1, R);
-  */
-
   printMatrix(R, 3, 1);
+  */
   return EXIT_SUCCESS;
 }
