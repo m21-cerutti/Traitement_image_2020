@@ -69,6 +69,7 @@ void save_image(pnm img, char *prefix, char *name)
   sprintf(output, "%s/%s%s", dname, prefix, bname);
   pnm_save(img, PnmRawPpm, output);
 }
+
 //////////////////////
 
 #define NB_CHANNELS 3
@@ -100,9 +101,30 @@ void imageArrayToPnm(Pixel* source, pnm dest, int rows, int cols)
     {
       int i, j;
       indexToPosition(index, &i, &j, rows);
-      unsigned short val = fmax(0, fmin(255, source[index].data[k]));
+      unsigned short val = fmax(0., fmin(255., source[index].data[k]));
       pnm_set_component(dest, i, j, k, val);
     }
+  }
+}
+
+void getImageStats(Pixel* source, int rows, int cols, double means[NB_CHANNELS], double var[NB_CHANNELS])
+{
+  for (int index = 0; index < (rows * cols); index++)
+  {
+    int i, j;
+    indexToPosition(index, &i, &j, rows);
+    for (int k = 0; k < NB_CHANNELS; k++)
+    {
+      double val = source[index].data[k];
+      means[k] += val;
+      var[k] += val * val;
+    }
+  }
+
+  for (int k = 0; k < NB_CHANNELS; k++)
+  {
+    means[k] /= rows * cols;
+    var[k] = (var[k] / (rows * cols)) - means[k] * means[k];
   }
 }
 
@@ -167,26 +189,64 @@ void process(char *ims, char *imt, char* imd){
 
   Pixel* colors = (Pixel*)malloc(sizeof(Pixel) * rows * cols);
   pnmToImageArray(input, colors, rows, cols);
-  Pixel* res= (Pixel*)malloc(sizeof(Pixel) * rows * cols);
+  Pixel* lms= (Pixel*)malloc(sizeof(Pixel)* rows * cols);
+
+  Pixel* test= (Pixel*)malloc(sizeof(Pixel) * rows * cols);
 
   for (int i = 0; i < rows; i++)
   {
     for (int j = 0; j < cols; j++)
     {
-      for (int k = 0; k < 3; k++)
-      {
-        int index = positionToIndex(i, j, rows);
-        matrixProduct(RGB2LMS, D, D, colors[index].data, D, 1, res[index].data);
-        matrixProduct(LMS2RGB, D, D, res[index].data, D, 1, colors[index].data);
-      }
+      int index = positionToIndex(i, j, rows);
+      matrixProduct(RGB2LMS, D, D, colors[index].data, D, 1, lms[index].data);
+      //printf("\nLMS\n");
+      //printMatrix(lms[index].data, 3, 1);
+      matrixProduct(LMS2RGB, D, D, lms[index].data, D, 1, test[index].data);
+      //printf("\nTEST\n");
+      //printMatrix(test[index].data, 3, 1);
     }
   }
+
+  //Stats
+  double means[NB_CHANNELS]; 
+  double var[NB_CHANNELS];
+  getImageStats(lms, rows, cols, means, var);
+
+  printf("\nLMS\n");
+  for (int k = 0; k < 3; k++)
+  {
+    printf("Mean channel %d : %lf\n", k ,means[k]);
+    printf("Variance channel %d : %lf\n", k , var[k]);
+    printf("Deviation channel %d : %lf\n", k , sqrt(var[k]));
+  }
+
+  getImageStats(colors, rows, cols, means, var);
+
+  printf("\nColors\n");
+  for (int k = 0; k < 3; k++)
+  {
+    printf("Mean channel %d : %lf\n", k ,means[k]);
+    printf("Variance channel %d : %lf\n", k , var[k]);
+    printf("Deviation channel %d : %lf\n", k , sqrt(var[k]));
+  }
+
+  getImageStats(test, rows, cols, means, var);
+
+  printf("\nTest\n");
+  for (int k = 0; k < 3; k++)
+  {
+    printf("Mean channel %d : %lf\n", k ,means[k]);
+    printf("Variance channel %d : %lf\n", k , var[k]);
+    printf("Deviation channel %d : %lf\n", k , sqrt(var[k]));
+  }
+
   (void)imt;
   pnm output = pnm_new(cols, rows, PnmRawPpm);
-  imageArrayToPnm(colors, output, rows, cols);
+  imageArrayToPnm(test, output, rows, cols);
   save_image(output, "", imd);
   free(colors);
-  free(res);
+  free(lms);
+  free(test);
   pnm_free(input);
   pnm_free(output);
 }
