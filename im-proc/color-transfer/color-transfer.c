@@ -53,10 +53,12 @@ void indexToPosition(int index, int *i, int *j, const int rows)
   *j = index / rows;
 }
 
-int positionToIndex(int i, int j, const int rows)
+/* CHANGE TO COLS IN CODE
+int positionToIndex(int i, int j, const int cols)
 {
-  return i * rows + j;
+  return i * cols + j;
 }
+*/
 
 void save_image(pnm img, char *prefix, char *name)
 {
