@@ -165,10 +165,9 @@ void process(char *ims, char *imt, char* imd){
   int cols = pnm_get_width(input);
   int rows = pnm_get_height(input);
 
-
-  Pixel colors[rows * cols* NB_CHANNELS];
+  Pixel* colors = (Pixel*)malloc(sizeof(Pixel) * rows * cols);
   pnmToImageArray(input, colors, rows, cols);
-  Pixel res[rows * cols* NB_CHANNELS];
+  Pixel* res= (Pixel*)malloc(sizeof(Pixel) * rows * cols);
 
   for (int i = 0; i < rows; i++)
   {
@@ -186,6 +185,8 @@ void process(char *ims, char *imt, char* imd){
   pnm output = pnm_new(cols, rows, PnmRawPpm);
   imageArrayToPnm(colors, output, rows, cols);
   save_image(output, "", imd);
+  free(colors);
+  free(res);
   pnm_free(input);
   pnm_free(output);
 }
@@ -199,28 +200,5 @@ void usage (char *s){
 int main(int argc, char *argv[]){
   if (argc != PARAM+1) usage(argv[0]);
   process(argv[1], argv[2], argv[3]);
-
- /*
-  printMatrix(RGB2LMS, D, D);
-  printMatrix(LMS2RGB, D, D);
-  printMatrix(LAB2LMS, D, D);
-  printMatrix(LMS2LAB, D, D);
-  
-
-  double M[3] = {
-  1., 
-  1., 
-  1.,   
-  };
-
-  double R[3] = {
-  0., 
-  0., 
-  0.,   
-  };
-  
-  matrixProduct(RGB2LMS, D, D, M, D, 1, R);
-  printMatrix(R, 3, 1);
-  */
   return EXIT_SUCCESS;
 }
