@@ -49,8 +49,8 @@ double LMS2LAB[3*3] = {
 
 void indexToPosition(int index, int *i, int *j, const int cols)
 {
-  *i = index % cols;
-  *j = index / cols;
+  *i = index / cols;
+  *j = index % cols;
 }
 
 int positionToIndex(int i, int j, const int cols)
@@ -208,7 +208,6 @@ void process(char *ims, char *imt, char* imd){
   }
 
   //Stats
-  
   double means[NB_CHANNELS]; 
   double var[NB_CHANNELS];
   getImageStats(lms, rows, cols, means, var);
@@ -219,6 +218,7 @@ void process(char *ims, char *imt, char* imd){
     printf("Mean channel %d : %lf\n", k ,means[k]);
     printf("Variance channel %d : %lf\n", k , var[k]);
     printf("Deviation channel %d : %lf\n", k , sqrt(var[k]));
+    printf("\n");
   }
 
   getImageStats(colors, rows, cols, means, var);
@@ -229,6 +229,7 @@ void process(char *ims, char *imt, char* imd){
     printf("Mean channel %d : %lf\n", k ,means[k]);
     printf("Variance channel %d : %lf\n", k , var[k]);
     printf("Deviation channel %d : %lf\n", k , sqrt(var[k]));
+    printf("\n");
   }
 
   getImageStats(test, rows, cols, means, var);
@@ -239,6 +240,7 @@ void process(char *ims, char *imt, char* imd){
     printf("Mean channel %d : %lf\n", k ,means[k]);
     printf("Variance channel %d : %lf\n", k , var[k]);
     printf("Deviation channel %d : %lf\n", k , sqrt(var[k]));
+    printf("\n");
   }
   
   (void)imt;
