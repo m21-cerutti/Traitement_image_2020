@@ -47,18 +47,16 @@ double LMS2LAB[3*3] = {
 
 //////////////////////
 
-void indexToPosition(int index, int *i, int *j, const int rows)
+void indexToPosition(int index, int *i, int *j, const int cols)
 {
-  *i = index % rows;
-  *j = index / rows;
+  *i = index % cols;
+  *j = index / cols;
 }
 
-/* CHANGE TO COLS IN CODE
 int positionToIndex(int i, int j, const int cols)
 {
   return i * cols + j;
 }
-*/
 
 void save_image(pnm img, char *prefix, char *name)
 {
@@ -88,7 +86,7 @@ void pnmToImageArray(pnm source, Pixel* dest, int rows, int cols)
     for (int k = 0; k < 3; k++)
     {
       int i, j;
-      indexToPosition(index, &i, &j, rows);
+      indexToPosition(index, &i, &j, cols);
       unsigned short val = pnm_get_component(source, i, j, k);
       dest[index].data[k] = val;
     }
@@ -102,7 +100,7 @@ void imageArrayToPnm(Pixel* source, pnm dest, int rows, int cols)
     for (int k = 0; k < 3; k++)
     {
       int i, j;
-      indexToPosition(index, &i, &j, rows);
+      indexToPosition(index, &i, &j, cols);
       unsigned short val = fmax(0., fmin(255., source[index].data[k]));
       pnm_set_component(dest, i, j, k, val);
     }
@@ -114,7 +112,7 @@ void getImageStats(Pixel* source, int rows, int cols, double means[NB_CHANNELS],
   for (int index = 0; index < (rows * cols); index++)
   {
     int i, j;
-    indexToPosition(index, &i, &j, rows);
+    indexToPosition(index, &i, &j, cols);
     for (int k = 0; k < NB_CHANNELS; k++)
     {
       double val = source[index].data[k];
@@ -144,7 +142,7 @@ void matrixProduct(double* M1, int rows1, int cols1, double* M2, int rows2, int 
   {
     for (int jo = 0; jo < cols2; jo++)
     {
-      int indexo = positionToIndex(io, jo, rows1);
+      int indexo = positionToIndex(io, jo, cols2);
       out[indexo] = 0;
     }
   }
@@ -156,9 +154,9 @@ void matrixProduct(double* M1, int rows1, int cols1, double* M2, int rows2, int 
       int k1 =0, k2 =0;
       for (; k1 < cols1 && k2 < rows2; k1++, k2++)
       {
-        int indexo = positionToIndex(io, jo, rows1);
-        int index1 = positionToIndex(io, k1, rows1);
-        int index2 = positionToIndex(k2, jo, rows2);
+        int indexo = positionToIndex(io, jo, cols2);
+        int index1 = positionToIndex(io, k1, cols1);
+        int index2 = positionToIndex(k2, jo, cols2);
 
         out[indexo] += M1[index1] * M2[index2];
       }
@@ -173,7 +171,7 @@ void printMatrix(double* M, int rows, int cols)
     printf("[ ");
     for (int j = 0; j < cols; j++)
     {
-      int index = positionToIndex(i, j, rows);
+      int index = positionToIndex(i, j, cols);
       printf("\t%lf\t", M[index]);
     }
     printf(" ]\n");
@@ -199,7 +197,7 @@ void process(char *ims, char *imt, char* imd){
   {
     for (int j = 0; j < cols; j++)
     {
-      int index = positionToIndex(i, j, rows);
+      int index = positionToIndex(i, j, cols);
       matrixProduct(RGB2LMS, D, D, colors[index].data, D, 1, lms[index].data);
       //printf("\nLMS\n");
       //printMatrix(lms[index].data, 3, 1);
@@ -210,6 +208,7 @@ void process(char *ims, char *imt, char* imd){
   }
 
   //Stats
+  
   double means[NB_CHANNELS]; 
   double var[NB_CHANNELS];
   getImageStats(lms, rows, cols, means, var);
@@ -241,11 +240,12 @@ void process(char *ims, char *imt, char* imd){
     printf("Variance channel %d : %lf\n", k , var[k]);
     printf("Deviation channel %d : %lf\n", k , sqrt(var[k]));
   }
-
+  
   (void)imt;
   pnm output = pnm_new(cols, rows, PnmRawPpm);
   imageArrayToPnm(test, output, rows, cols);
   save_image(output, "", imd);
+
   free(colors);
   free(lms);
   free(test);
