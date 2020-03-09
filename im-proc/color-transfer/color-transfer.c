@@ -186,33 +186,31 @@ void rgbToLab()
 //////////////////////
 
 void process(char *ims, char *imt, char* imd){
-  pnm input = pnm_load(ims);
+  pnm imsInput = pnm_load(ims);
 
-  int cols = pnm_get_width(input);
-  int rows = pnm_get_height(input);
+  int imsRows = pnm_get_height(imsInput);
+  int imsCols = pnm_get_width(imsInput);
 
-  Pixel* imsColors = (Pixel*)malloc(sizeof(Pixel) * rows * cols);
-  pnmToImageArray(input, imsColors, rows, cols);
-  Pixel* imsLMS= (Pixel*)malloc(sizeof(Pixel)* rows * cols);
-  Pixel* imsLAB= (Pixel*)malloc(sizeof(Pixel)* rows * cols);
+  Pixel* imsColors = (Pixel*)malloc(sizeof(Pixel) * imsRows * imsCols);
+  pnmToImageArray(imsInput, imsColors, imsRows, imsCols);
+  Pixel* imsLMS= (Pixel*)malloc(sizeof(Pixel)* imsRows * imsCols);
+  Pixel* imsLAB= (Pixel*)malloc(sizeof(Pixel)* imsRows * imsCols);
 
   pnm imtInput = pnm_load(imt);
 
-  int imtCols = pnm_get_width(input);
-  int imtRows = pnm_get_height(input);
+  int imtCols = pnm_get_width(imtInput);
+  int imtRows = pnm_get_height(imtInput);
 
   Pixel* imtColors = (Pixel*)malloc(sizeof(Pixel) * imtRows * imtCols);
-  pnmToImageArray(imtInput, imtColors, rows, cols);
+  pnmToImageArray(imtInput, imtColors, imtRows, imtCols);
   Pixel* imtLMS= (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
   Pixel* imtLAB= (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
 
-  Pixel* test= (Pixel*)malloc(sizeof(Pixel) * imtRows * imtCols);
-
-  for (int i = 0; i < rows; i++)
+  for (int i = 0; i < imsRows; i++)
   {
-    for (int j = 0; j < cols; j++)
+    for (int j = 0; j < imsCols; j++)
     {
-      int index = positionToIndex(i, j, cols);
+      int index = positionToIndex(i, j, imsCols);
       matrixProduct(RGB2LMS, D, D, imsColors[index].data, D, 1, imsLMS[index].data);
 			matrixProduct(LMS2LAB, D, D, imsLMS[index].data, D, 1, imsLAB[index].data);
     }
@@ -232,7 +230,7 @@ void process(char *ims, char *imt, char* imd){
   double imsMean[NB_CHANNELS], imsVar[NB_CHANNELS];
   double imtMean[NB_CHANNELS], imtVar[NB_CHANNELS];
 
-  getImageStats(imsLAB, rows, cols, imsMean, imsVar);
+  getImageStats(imsLAB, imsRows, imsCols, imsMean, imsVar);
   getImageStats(imtLAB, imtRows, imtCols, imtMean, imtVar);
 
   // Color transfer
@@ -250,16 +248,15 @@ void process(char *ims, char *imt, char* imd){
     }
   }
 
-  for (int i = 0; i < rows; i++)
+  for (int i = 0; i < imtRows; i++)
   {
-    for (int j = 0; j < cols; j++)
+    for (int j = 0; j < imtCols; j++)
     {
-      int index = positionToIndex(i, j, cols);
+      int index = positionToIndex(i, j, imtCols);
       matrixProduct(LAB2LMS, D, D, imtLAB[index].data, D, 1, imtLMS[index].data);
       matrixProduct(LMS2RGB, D, D, imtLMS[index].data, D, 1, imtColors[index].data);
     }
   }
-
 
   pnm output = pnm_new(imtCols, imtRows, PnmRawPpm);
   imageArrayToPnm(imtColors, output, imtRows, imtCols);
@@ -268,11 +265,10 @@ void process(char *ims, char *imt, char* imd){
   free(imsColors);
   free(imsLMS);
   free(imsLAB);
-  free(test);
   free(imtColors);
   free(imtLMS);
   free(imtLAB);
-  pnm_free(input);
+  pnm_free(imsInput);
   pnm_free(imtInput);
   pnm_free(output);
 }
