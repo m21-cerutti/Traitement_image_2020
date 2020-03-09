@@ -28,7 +28,7 @@ $(LIB): $(OBJ)
 	 $(CXX) -o $@ $(LDFLAGS) $^
 
 $(PVISU):
-	cd src/pvisu && qmake-qt4 pvisu.pro && $(MAKE)
+	cd src/pvisu && qmake pvisu.pro && $(MAKE)
 
 .PHONY: clean cleanall distclean usage
 clean:

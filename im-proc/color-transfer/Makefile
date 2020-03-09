@@ -3,7 +3,7 @@ ROOT=../bcl
 CPPFLAGS = -I$(ROOT)/include -I.
 CFLAGS   = -Wall -Wextra -pedantic -std=c99 --debug #-Werror
 LDFLAGS  = -L$(ROOT)/lib
-LDLIBS   = -lbcl -lm -lfftw3
+LDLIBS   = -lbcl -lm 
 
 BIN=color-transfer
 

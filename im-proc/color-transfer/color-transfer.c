@@ -34,15 +34,15 @@ double LMS2RGB[3*3] = {
 };
 
 double LAB2LMS[3*3] = {
-  sqrt(3)/3, sqrt(6)/6, sqrt(2)/2,
-  sqrt(3)/3, sqrt(6)/6, -sqrt(2)/2,
-  sqrt(3)/3, -sqrt(6)/3, 0
+  0.5773, 0.4082,  0.7071,
+  0.5773, 0.4082, -0.7071,
+  0.5773, -0.8165,  0.0000
 };
 
 double LMS2LAB[3*3] = {
-  1/sqrt(3), 1/sqrt(3), 1/sqrt(3),
-  1/sqrt(6), 1/sqrt(6), -1/sqrt(6),
-  1/sqrt(2), -sqrt(2), 0
+  0.5773,  0.5773,  0.5773,
+  0.4082,  0.4082, -0.8165,
+  0.7071, -0.7071,  0.0000
 };
 
 //////////////////////
@@ -130,7 +130,7 @@ void getImageStats(Pixel* source, int rows, int cols, double means[NB_CHANNELS],
 
 //////////////////////
 
-void matrixProduct(double* M1, int rows1, int cols1, double* M2, int rows2, int cols2, double* out) 
+void matrixProduct(double* M1, int rows1, int cols1, double* M2, int rows2, int cols2, double* out)
 {
   if( cols1 != rows2)
   {
@@ -179,6 +179,10 @@ void printMatrix(double* M, int rows, int cols)
   printf("\n");
 }
 
+void rgbToLab()
+{
+
+}
 //////////////////////
 
 void process(char *ims, char *imt, char* imd){
@@ -187,71 +191,89 @@ void process(char *ims, char *imt, char* imd){
   int cols = pnm_get_width(input);
   int rows = pnm_get_height(input);
 
-  Pixel* colors = (Pixel*)malloc(sizeof(Pixel) * rows * cols);
-  pnmToImageArray(input, colors, rows, cols);
-  Pixel* lms= (Pixel*)malloc(sizeof(Pixel)* rows * cols);
+  Pixel* imsColors = (Pixel*)malloc(sizeof(Pixel) * rows * cols);
+  pnmToImageArray(input, imsColors, rows, cols);
+  Pixel* imsLMS= (Pixel*)malloc(sizeof(Pixel)* rows * cols);
+  Pixel* imsLAB= (Pixel*)malloc(sizeof(Pixel)* rows * cols);
 
-  Pixel* test= (Pixel*)malloc(sizeof(Pixel) * rows * cols);
+  pnm imtInput = pnm_load(imt);
+
+  int imtCols = pnm_get_width(input);
+  int imtRows = pnm_get_height(input);
+
+  Pixel* imtColors = (Pixel*)malloc(sizeof(Pixel) * imtRows * imtCols);
+  pnmToImageArray(imtInput, imtColors, rows, cols);
+  Pixel* imtLMS= (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
+  Pixel* imtLAB= (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
+
+  Pixel* test= (Pixel*)malloc(sizeof(Pixel) * imtRows * imtCols);
 
   for (int i = 0; i < rows; i++)
   {
     for (int j = 0; j < cols; j++)
     {
       int index = positionToIndex(i, j, cols);
-      matrixProduct(RGB2LMS, D, D, colors[index].data, D, 1, lms[index].data);
-      //printf("\nLMS\n");
-      //printMatrix(lms[index].data, 3, 1);
-      matrixProduct(LMS2RGB, D, D, lms[index].data, D, 1, test[index].data);
-      //printf("\nTEST\n");
-      //printMatrix(test[index].data, 3, 1);
+      matrixProduct(RGB2LMS, D, D, imsColors[index].data, D, 1, imsLMS[index].data);
+			matrixProduct(LMS2LAB, D, D, imsLMS[index].data, D, 1, imsLAB[index].data);
+    }
+  }
+
+  for (int i = 0; i < imtRows; i++)
+  {
+    for (int j = 0; j < imtCols; j++)
+    {
+      int index = positionToIndex(i, j, imtCols);
+      matrixProduct(RGB2LMS, D, D, imtColors[index].data, D, 1, imtLMS[index].data);
+      matrixProduct(LMS2LAB, D, D, imtLMS[index].data, D, 1, imtLAB[index].data);
     }
   }
 
   //Stats
-  double means[NB_CHANNELS]; 
-  double var[NB_CHANNELS];
-  getImageStats(lms, rows, cols, means, var);
+  double imsMean[NB_CHANNELS], imsVar[NB_CHANNELS];
+  double imtMean[NB_CHANNELS], imtVar[NB_CHANNELS];
 
-  printf("\nLMS\n");
-  for (int k = 0; k < 3; k++)
+  getImageStats(imsLAB, rows, cols, imsMean, imsVar);
+  getImageStats(imtLAB, imtRows, imtCols, imtMean, imtVar);
+
+  // Color transfer
+  for (int index = 0; index < (imtRows * imtCols); index++)
   {
-    printf("Mean channel %d : %lf\n", k ,means[k]);
-    printf("Variance channel %d : %lf\n", k , var[k]);
-    printf("Deviation channel %d : %lf\n", k , sqrt(var[k]));
-    printf("\n");
+    for (int k = 0; k < 3; k++)
+    {
+      double p = imtLAB[index].data[k]; //get position
+
+      p -= imtMean[k];
+      p = (sqrt(imsVar[k])/sqrt(imtVar[k])) * p;
+      p += imsMean[k];
+
+      imtLAB[index].data[k] = p;
+    }
   }
 
-  getImageStats(colors, rows, cols, means, var);
-
-  printf("\nColors\n");
-  for (int k = 0; k < 3; k++)
+  for (int i = 0; i < rows; i++)
   {
-    printf("Mean channel %d : %lf\n", k ,means[k]);
-    printf("Variance channel %d : %lf\n", k , var[k]);
-    printf("Deviation channel %d : %lf\n", k , sqrt(var[k]));
-    printf("\n");
+    for (int j = 0; j < cols; j++)
+    {
+      int index = positionToIndex(i, j, cols);
+      matrixProduct(LAB2LMS, D, D, imtLAB[index].data, D, 1, imtLMS[index].data);
+      matrixProduct(LMS2RGB, D, D, imtLMS[index].data, D, 1, imtColors[index].data);
+    }
   }
 
-  getImageStats(test, rows, cols, means, var);
 
-  printf("\nTest\n");
-  for (int k = 0; k < 3; k++)
-  {
-    printf("Mean channel %d : %lf\n", k ,means[k]);
-    printf("Variance channel %d : %lf\n", k , var[k]);
-    printf("Deviation channel %d : %lf\n", k , sqrt(var[k]));
-    printf("\n");
-  }
-  
-  (void)imt;
-  pnm output = pnm_new(cols, rows, PnmRawPpm);
-  imageArrayToPnm(test, output, rows, cols);
+  pnm output = pnm_new(imtCols, imtRows, PnmRawPpm);
+  imageArrayToPnm(imtColors, output, imtRows, imtCols);
   save_image(output, "", imd);
 
-  free(colors);
-  free(lms);
+  free(imsColors);
+  free(imsLMS);
+  free(imsLAB);
   free(test);
+  free(imtColors);
+  free(imtLMS);
+  free(imtLAB);
   pnm_free(input);
+  pnm_free(imtInput);
   pnm_free(output);
 }
 
