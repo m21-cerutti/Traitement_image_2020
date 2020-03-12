@@ -3,6 +3,7 @@
         "stdio.h": "c",
         "*.tcc": "c",
         "xiosbase": "c",
-        "xlocale": "c"
+        "xlocale": "c",
+        "*.cuh": "c"
     }
 }

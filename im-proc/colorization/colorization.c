@@ -20,8 +20,12 @@
 #include <bcl.h>
 
 #define D 3
-#define NB_JITTERED_SAMPLE 200
+#define NB_CHANNELS 3
+//Must be squared
+#define NB_JITTERED_SAMPLE 196
 #define NB_NEIGHBOR 25
+
+#define DEFAULT_SAMPLE_SIZE_SQUARED 5
 
 double RGB2LMS[3*3] = {
   0.3811, 0.5783, 0.0402,
@@ -74,12 +78,15 @@ void save_image(pnm img, char *prefix, char *name)
 
 //////////////////////
 
-#define NB_CHANNELS 3
-
 typedef struct s_Pixel
 {
   double data[NB_CHANNELS];
 } Pixel;
+
+typedef struct s_Pixel_Stats
+{
+  double data[2];
+} Pixel_Stats;
 
 void pnmToImageArray(pnm source, Pixel* dest, int rows, int cols)
 {
@@ -136,45 +143,6 @@ void getImageStats(Pixel* source, int rows, int cols, double means[NB_CHANNELS],
   }
 }
 
-#define DEFAULT_SAMPLE_SIZE_SQUARED 5
-
-void getNeighboursPixelStats(int indexPixel, int sampleSizeSquared, Pixel* source, int rows, int cols, double means[NB_CHANNELS], double var[NB_CHANNELS])
-{
-  for (int k = 0; k < NB_CHANNELS; k++)
-  {
-    means[k] = 0;
-    var[k] = 0;
-  }
-
-  int ip, jp;
-  indexToPosition(indexPixel, &ip, &jp, cols);
-
-  for (int i = ip - sampleSizeSquared; i < (ip + sampleSizeSquared); i++)
-  {
-     for (int j = jp - sampleSizeSquared; i < (jp + sampleSizeSquared); j++)
-    {
-      int index = positionToIndex(i, j, cols);
-      //Ignore border
-      if(index < 0  ||  index > (rows * cols))
-      {
-        continue;
-      }
-
-      for (int k = 0; k < NB_CHANNELS; k++)
-      {
-        double val = source[index].data[k];
-        means[k] += val;
-        var[k] += val * val;
-      }
-    }
-  }
-
-  for (int k = 0; k < NB_CHANNELS; k++)
-  {
-    means[k] /= rows * cols;
-    var[k] = (var[k] / (rows * cols)) - means[k] * means[k];
-  }
-}
 //////////////////////
 
 void matrixProduct(double* M1, int rows1, int cols1, double* M2, int rows2, int cols2, double* out)
@@ -260,18 +228,73 @@ void labToRGB(Pixel* lab, Pixel* rgb, int rows, int cols)
   free(lms);
 }
 
-void jitteredSelect(Pixel *imsLAB, Pixel *jitteredGrid, int imsRows, int imsCols)
-{
-  for (int i = 0; i < NB_JITTERED_SAMPLE; i++)
-  {
+//////////////////////
 
+void getNeighboursPixelStats(int indexPixel, int sampleSizeSquared, Pixel* source, int rows, int cols, double means[NB_CHANNELS], double var[NB_CHANNELS])
+{
+  for (int k = 0; k < NB_CHANNELS; k++)
+  {
+    means[k] = 0;
+    var[k] = 0;
   }
+
+  int ip, jp;
+  indexToPosition(indexPixel, &ip, &jp, cols);
+
+  for (int i = ip - sampleSizeSquared; i < (ip + sampleSizeSquared); i++)
+  {
+     for (int j = jp - sampleSizeSquared; i < (jp + sampleSizeSquared); j++)
+    {
+      int index = positionToIndex(i, j, cols);
+      //Ignore border
+      if(index < 0  ||  index > (rows * cols))
+      {
+        continue;
+      }
+
+      for (int k = 0; k < NB_CHANNELS; k++)
+      {
+        double val = source[index].data[k];
+        means[k] += val;
+        var[k] += val * val;
+      }
+    }
+  }
+
+  for (int k = 0; k < NB_CHANNELS; k++)
+  {
+    means[k] /= rows * cols;
+    var[k] = (var[k] / (rows * cols)) - means[k] * means[k];
+  }
+}
+
+void jitteredSelect(int *jitteredGrid, int rows, int cols )
+{
+
+  int offsetY = rows / sqrt(NB_JITTERED_SAMPLE);
+  int offsetX = cols / sqrt(NB_JITTERED_SAMPLE);
+
+  int p = 0;
+  for (int i = offsetY/2; i < rows; i+=offsetY)
+  {
+    for (int j = offsetX/2; j < cols; j+=offsetX)
+    {
+      i = i + rand()%offsetY - offsetY/2;
+      j = j + rand()%offsetX - offsetX/2;
+
+      int index = positionToIndex(i, j, cols);
+      index = fmax(0, fmin(index, rows*cols));
+      printf("%d\n", index);
+      jitteredGrid[p] = index;
+      printf("%d\n", p);
+      p++;
+    }
+  }
+  
 }
 
 void bestMatch(Pixel imtPixel, Pixel* neighbor, Pixel *jitteredGrid, Pixel match)
 {
-
-  //getImageStats(neighbor, rows, cols, means[NB_CHANNELS], var[NB_CHANNELS]);
   for (int i = 0; i < NB_JITTERED_SAMPLE; i++)
   {
 
@@ -305,24 +328,56 @@ void process(char *ims, char *imt, char* imd){
   Pixel* imtLAB = (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
   rgbToLab(imtColors, imtLAB, imtRows, imtCols);
 
-  //TODO
-  Pixel* imdLAB = (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
-  Pixel* imdColors = (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
+  //Jittered grid
+  int* jitteredGrid = (int*)malloc(sizeof(int)* NB_JITTERED_SAMPLE);
+  jitteredSelect(jitteredGrid, imsRows, imsCols);
 
-  Pixel* jitteredGrid = (Pixel*)malloc(sizeof(Pixel)* NB_JITTERED_SAMPLE);
-  jitteredSelect(imsLAB, jitteredGrid, imsRows, imsCols);
-
-  Pixel match;
-  Pixel *imtNeighbor = (Pixel*)malloc(sizeof(Pixel)* NB_NEIGHBOR);
-
-  for (int i = 0; i < imtRows * imtCols; i++) {
-    bestMatch(imtLAB[i], imtNeighbor, jitteredGrid, match);
-    transfer(imtLAB[i], match, imdLAB, i);
+/*
+  //Stats jittered
+  Pixel_Stats *jitteredStats = (Pixel_Stats*)malloc(sizeof(Pixel_Stats)* NB_JITTERED_SAMPLE);
+  for (int p = 0; p < NB_JITTERED_SAMPLE; p++)
+  {
+    double means[NB_CHANNELS], var[NB_CHANNELS];
+    getNeighboursPixelStats(jitteredGrid[p], DEFAULT_SAMPLE_SIZE_SQUARED, imsLAB, imsRows, imsCols, means, var);
+    jitteredStats[p].data[0] = means[0];
+    jitteredStats[p].data[1] = var[0];
   }
 
+  //Stats grey
+  Pixel_Stats *imtStats = (Pixel_Stats*)malloc(sizeof(Pixel_Stats)* imtRows * imtCols);
+  for (int index = 0; index < (imtRows * imtCols); index++)
+  {
+    double means[NB_CHANNELS], var[NB_CHANNELS];
+    getNeighboursPixelStats(index, DEFAULT_SAMPLE_SIZE_SQUARED, imtLAB, imtRows, imtCols, means, var);
+    imtStats[index].data[0] = means[0];
+    imtStats[index].data[1] = var[0];
+  }
+*/
+  //Best match and copy
+  Pixel* imdLAB = (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
+  Pixel* imdColors = (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
+  for (int i = 0; i < imtRows * imtCols; i++) {
+    //int indexMatchJittered = bestMatch(imtStats[i], jitteredStats, match);
+    //Pixel pix = imsLAB[jitteredGrid[indexMatchJittered]];
+    //transfer(imsLAB[indexMatch], imtLAB[indexMatch], imdLAB[i], indexMatch);
+  }
 
+  //DEBUG JITTERED
+  Pixel* imsJitteredDebug = (Pixel*)malloc(sizeof(Pixel)* imsRows * imsCols);
+  for (int p = 0; p < NB_JITTERED_SAMPLE; p++)
+  {
+    int index = jitteredGrid[p];
+    for (int k = 0; k < NB_CHANNELS; k++)
+    {
+      imsJitteredDebug[index].data[k] =  255;
+    }
+  }
+  pnm debug = pnm_new(imsCols, imsRows, PnmRawPpm);
+  imageArrayToPnm(imsJitteredDebug, debug, imsRows, imsCols);
+  save_image(debug, "", "debug.ppm");
+
+  //Reconvert
   labToRGB(imdLAB, imtColors, imtRows, imtCols);
-
   pnm output = pnm_new(imtCols, imtRows, PnmRawPpm);
   imageArrayToPnm(imdColors, output, imtRows, imtCols);
   save_image(output, "", imd);
