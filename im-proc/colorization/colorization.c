@@ -309,21 +309,17 @@ void jitteredSelect(int *jitteredGrid, int rows, int cols )
   //printf("p %d\n", p);
 }
 
-/*
-void bestMatch(Pixel imtPixel, Pixel* neighbor, Pixel *jitteredGrid, Pixel match)
+int bestMatch(Pixel_Stats imtPixel, Pixel *jitteredGrid)
 {
-  for (int i = 0; i < NB_JITTERED_SAMPLE; i++)
-  {
-
-  }
+  //TODO see process for idea
+  return 0;
 }
-*/
 
-void transfer(Pixel imtPixel, Pixel bestMatch, Pixel *imdLAB, int index)
+void transfer(Pixel greyLuminance, Pixel ColorAB, Pixel *imdLAB, int index)
 {
-  imdLAB[index].data[0] = imtPixel.data[0];
-  imdLAB[index].data[1] = bestMatch.data[1];
-  imdLAB[index].data[2] = bestMatch.data[2];
+  imdLAB[index].data[0] = greyLuminance.data[0];
+  imdLAB[index].data[1] = ColorAB.data[1];
+  imdLAB[index].data[2] = ColorAB.data[2];
 }
 //////////////////////
 
@@ -372,13 +368,15 @@ void process(char *ims, char *imt, char* imd){
   //Best match and copy
   Pixel* imdLAB = (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
   Pixel* imdColors = (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
-  for (int i = 0; i < imtRows * imtCols; i++) {
+  for (int index = 0; index < imtRows * imtCols; index++) {
 
-    ///Idée Trier jitteredGrid par les valeur de jitteredStats et faire une recheche dichotomique du plus proche.
+    /// Idée Trier jitteredGrid par les valeur de jitteredStats et faire une recherche dichotomique du plus proche.
+    /// Possible de trier en dehors pour plus efficace
 
-    //int indexMatchJittered = bestMatch(imtStats[i], jitteredStats, match);
-    //Pixel pix = imsLAB[jitteredGrid[indexMatchJittered]];
-    //transfer(imsLAB[indexMatch], imtLAB[indexMatch], imdLAB[i], indexMatch);
+    int indexMatchJittered = bestMatch(imtStats[index], jitteredStats);
+    int indexMatch = jitteredGrid[indexMatchJittered];
+
+    transfer(imsLAB[indexMatch], imtLAB[index], imdLAB, index);
   }
 
   //DEBUG JITTERED
