@@ -109,6 +109,12 @@ void imageArrayToPnm(Pixel* source, pnm dest, int rows, int cols)
 
 void getImageStats(Pixel* source, int rows, int cols, double means[NB_CHANNELS], double var[NB_CHANNELS])
 {
+  for (int k = 0; k < NB_CHANNELS; k++)
+  {
+    means[k] = 0;
+    var[k] = 0;
+  }
+
   for (int index = 0; index < (rows * cols); index++)
   {
     int i, j;
@@ -128,6 +134,45 @@ void getImageStats(Pixel* source, int rows, int cols, double means[NB_CHANNELS],
   }
 }
 
+#define DEFAULT_SAMPLE_SIZE_SQUARED 5
+
+void getNeighboursPixelStats(int indexPixel, int sampleSizeSquared, Pixel* source, int rows, int cols, double means[NB_CHANNELS], double var[NB_CHANNELS])
+{
+  for (int k = 0; k < NB_CHANNELS; k++)
+  {
+    means[k] = 0;
+    var[k] = 0;
+  }
+
+  int ip, jp;
+  indexToPosition(indexPixel, &ip, &jp, cols);
+
+  for (int i = ip - sampleSizeSquared; i < (ip + sampleSizeSquared); i++)
+  {
+     for (int j = jp - sampleSizeSquared; i < (jp + sampleSizeSquared); j++)
+    {
+      int index = positionToIndex(i, j, cols);
+      //Ignore border
+      if(index < 0  ||  index > (rows * cols))
+      {
+        continue;
+      }
+
+      for (int k = 0; k < NB_CHANNELS; k++)
+      {
+        double val = source[index].data[k];
+        means[k] += val;
+        var[k] += val * val;
+      }
+    }
+  }
+
+  for (int k = 0; k < NB_CHANNELS; k++)
+  {
+    means[k] /= rows * cols;
+    var[k] = (var[k] / (rows * cols)) - means[k] * means[k];
+  }
+}
 //////////////////////
 
 void matrixProduct(double* M1, int rows1, int cols1, double* M2, int rows2, int cols2, double* out)
