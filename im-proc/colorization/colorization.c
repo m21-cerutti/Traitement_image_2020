@@ -17,6 +17,10 @@
 
 #include <math.h>
 
+#ifndef M_PI
+    #define M_PI 3.14159265358979323846
+#endif
+
 #include <bcl.h>
 
 #define D 3
@@ -243,13 +247,13 @@ void getNeighboursPixelStats(int indexPixel, int sampleSizeSquared, Pixel* sourc
 
   for (int i = ip - sampleSizeSquared; i < (ip + sampleSizeSquared); i++)
   {
-     for (int j = jp - sampleSizeSquared; i < (jp + sampleSizeSquared); j++)
+    for (int j = jp - sampleSizeSquared; i < (jp + sampleSizeSquared); j++)
     {
       int index = positionToIndex(i, j, cols);
       //Ignore border
       if(index < 0  ||  index > (rows * cols))
       {
-        continue;
+        break;
       }
 
       for (int k = 0; k < NB_CHANNELS; k++)
@@ -268,29 +272,48 @@ void getNeighboursPixelStats(int indexPixel, int sampleSizeSquared, Pixel* sourc
   }
 }
 
+double rand_gen() {
+   // return a uniformly distributed random value
+   return ( (double)(rand()) + 1. )/( (double)(RAND_MAX) + 1. );
+}
+double normalRandom() {
+   // return a normally distributed random value
+   double v1=rand_gen();
+   double v2=rand_gen();
+   return cos(2*3.14*v2)*sqrt(-2.*log(v1));
+}
+
 void jitteredSelect(int *jitteredGrid, int rows, int cols )
 {
-
   int offsetY = rows / sqrt(NB_JITTERED_SAMPLE);
   int offsetX = cols / sqrt(NB_JITTERED_SAMPLE);
 
-  int p = 0;
-  for (int i = offsetY/2; i < rows; i+=offsetY)
-  {
-    for (int j = offsetX/2; j < cols; j+=offsetX)
-    {
-      i = i + rand()%offsetY - offsetY/2;
-      j = j + rand()%offsetX - offsetX/2;
+  //printf("Y %d\n", offsetY);
+  //printf("X %d\n", offsetX);
 
-      int index = positionToIndex(i, j, cols);
-      index = fmax(0, fmin(index, rows*cols));
-      printf("%d\n", index);
+  int p = 0;
+  for (int i = offsetY; i < rows; i+=offsetY)
+  {
+    for (int j = offsetX; j < cols; j+=offsetX)
+    {
+      //Random distribution
+      //int newi = i + (int)((rand_gen()-0.5)*offsetY/2);
+      //int newj = j + (int)((rand_gen()-0.5)*offsetX/2);
+
+      //Gaussian
+      int newi = i + (int)((normalRandom()-0.5)*offsetY/2);
+      int newj = j + (int)((normalRandom()-0.5)*offsetX/2);
+
+      //printf("%d %d\n", i, j);
+
+      int index = positionToIndex(newi, newj, cols);
+      //printf("%d\n", index);
       jitteredGrid[p] = index;
-      printf("%d\n", p);
+      //printf("%d\n", p);
       p++;
     }
   }
-  
+  //printf("p %d\n", p);
 }
 
 void bestMatch(Pixel imtPixel, Pixel* neighbor, Pixel *jitteredGrid, Pixel match)
@@ -332,15 +355,14 @@ void process(char *ims, char *imt, char* imd){
   int* jitteredGrid = (int*)malloc(sizeof(int)* NB_JITTERED_SAMPLE);
   jitteredSelect(jitteredGrid, imsRows, imsCols);
 
-/*
   //Stats jittered
   Pixel_Stats *jitteredStats = (Pixel_Stats*)malloc(sizeof(Pixel_Stats)* NB_JITTERED_SAMPLE);
   for (int p = 0; p < NB_JITTERED_SAMPLE; p++)
   {
     double means[NB_CHANNELS], var[NB_CHANNELS];
     getNeighboursPixelStats(jitteredGrid[p], DEFAULT_SAMPLE_SIZE_SQUARED, imsLAB, imsRows, imsCols, means, var);
-    jitteredStats[p].data[0] = means[0];
-    jitteredStats[p].data[1] = var[0];
+    //jitteredStats[p].data[0] = means[0];
+    //jitteredStats[p].data[1] = var[0];
   }
 
   //Stats grey
@@ -348,11 +370,11 @@ void process(char *ims, char *imt, char* imd){
   for (int index = 0; index < (imtRows * imtCols); index++)
   {
     double means[NB_CHANNELS], var[NB_CHANNELS];
-    getNeighboursPixelStats(index, DEFAULT_SAMPLE_SIZE_SQUARED, imtLAB, imtRows, imtCols, means, var);
-    imtStats[index].data[0] = means[0];
-    imtStats[index].data[1] = var[0];
+    //getNeighboursPixelStats(index, DEFAULT_SAMPLE_SIZE_SQUARED, imtLAB, imtRows, imtCols, means, var);
+    //imtStats[index].data[0] = means[0];
+    //imtStats[index].data[1] = var[0];
   }
-*/
+
   //Best match and copy
   Pixel* imdLAB = (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
   Pixel* imdColors = (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
