@@ -241,21 +241,19 @@ void getNeighboursPixelStats(int indexPixel, int sampleSizeSquared, Pixel* sourc
     means[k] = 0;
     var[k] = 0;
   }
-
   int ip, jp;
   indexToPosition(indexPixel, &ip, &jp, cols);
-
   for (int i = ip - sampleSizeSquared; i < (ip + sampleSizeSquared); i++)
   {
     for (int j = jp - sampleSizeSquared; i < (jp + sampleSizeSquared); j++)
     {
-      int index = positionToIndex(i, j, cols);
       //Ignore border
-      if(index < 0  ||  index > (rows * cols))
+      if(i < 0  ||  i > rows || j <0 || j > cols)
       {
-        break;
+        continue;
       }
 
+      int index = positionToIndex(i, j, cols);
       for (int k = 0; k < NB_CHANNELS; k++)
       {
         double val = source[index].data[k];
@@ -315,7 +313,7 @@ void jitteredSelect(int *jitteredGrid, int rows, int cols )
   }
   //printf("p %d\n", p);
 }
-
+/*
 void bestMatch(Pixel imtPixel, Pixel* neighbor, Pixel *jitteredGrid, Pixel match)
 {
   for (int i = 0; i < NB_JITTERED_SAMPLE; i++)
@@ -323,6 +321,7 @@ void bestMatch(Pixel imtPixel, Pixel* neighbor, Pixel *jitteredGrid, Pixel match
 
   }
 }
+*/
 
 void transfer(Pixel imtPixel, Pixel bestMatch, Pixel *imdLAB, int index)
 {
@@ -356,20 +355,19 @@ void process(char *ims, char *imt, char* imd){
   jitteredSelect(jitteredGrid, imsRows, imsCols);
 
   //Stats jittered
-  Pixel_Stats *jitteredStats = (Pixel_Stats*)malloc(sizeof(Pixel_Stats)* NB_JITTERED_SAMPLE);
+  double means[NB_CHANNELS], vars[NB_CHANNELS];
+  //Pixel_Stats *jitteredStats = (Pixel_Stats*)malloc(sizeof(Pixel_Stats)* NB_JITTERED_SAMPLE);
   for (int p = 0; p < NB_JITTERED_SAMPLE; p++)
   {
-    double means[NB_CHANNELS], var[NB_CHANNELS];
-    getNeighboursPixelStats(jitteredGrid[p], DEFAULT_SAMPLE_SIZE_SQUARED, imsLAB, imsRows, imsCols, means, var);
+    getNeighboursPixelStats(jitteredGrid[p], DEFAULT_SAMPLE_SIZE_SQUARED, imsLAB, imsRows, imsCols, means, vars);
     //jitteredStats[p].data[0] = means[0];
     //jitteredStats[p].data[1] = var[0];
   }
 
   //Stats grey
-  Pixel_Stats *imtStats = (Pixel_Stats*)malloc(sizeof(Pixel_Stats)* imtRows * imtCols);
+  //Pixel_Stats *imtStats = (Pixel_Stats*)malloc(sizeof(Pixel_Stats)* imtRows * imtCols);
   for (int index = 0; index < (imtRows * imtCols); index++)
   {
-    double means[NB_CHANNELS], var[NB_CHANNELS];
     //getNeighboursPixelStats(index, DEFAULT_SAMPLE_SIZE_SQUARED, imtLAB, imtRows, imtCols, means, var);
     //imtStats[index].data[0] = means[0];
     //imtStats[index].data[1] = var[0];
