@@ -243,9 +243,10 @@ void getNeighboursPixelStats(int indexPixel, int sampleSizeSquared, Pixel* sourc
   }
   int ip, jp;
   indexToPosition(indexPixel, &ip, &jp, cols);
+  
   for (int i = ip - sampleSizeSquared; i < (ip + sampleSizeSquared); i++)
   {
-    for (int j = jp - sampleSizeSquared; i < (jp + sampleSizeSquared); j++)
+    for (int j = jp - sampleSizeSquared; j < (jp + sampleSizeSquared); j++)
     {
       //Ignore border
       if(i < 0  ||  i > rows || j <0 || j > cols)
@@ -262,6 +263,7 @@ void getNeighboursPixelStats(int indexPixel, int sampleSizeSquared, Pixel* sourc
       }
     }
   }
+  
 
   for (int k = 0; k < NB_CHANNELS; k++)
   {
@@ -286,9 +288,6 @@ void jitteredSelect(int *jitteredGrid, int rows, int cols )
   int offsetY = rows / sqrt(NB_JITTERED_SAMPLE);
   int offsetX = cols / sqrt(NB_JITTERED_SAMPLE);
 
-  //printf("Y %d\n", offsetY);
-  //printf("X %d\n", offsetX);
-
   int p = 0;
   for (int i = offsetY; i < rows; i+=offsetY)
   {
@@ -302,17 +301,14 @@ void jitteredSelect(int *jitteredGrid, int rows, int cols )
       int newi = i + (int)((normalRandom()-0.5)*offsetY/2);
       int newj = j + (int)((normalRandom()-0.5)*offsetX/2);
 
-      //printf("%d %d\n", i, j);
-
       int index = positionToIndex(newi, newj, cols);
-      //printf("%d\n", index);
       jitteredGrid[p] = index;
-      //printf("%d\n", p);
       p++;
     }
   }
   //printf("p %d\n", p);
 }
+
 /*
 void bestMatch(Pixel imtPixel, Pixel* neighbor, Pixel *jitteredGrid, Pixel match)
 {
@@ -356,27 +352,30 @@ void process(char *ims, char *imt, char* imd){
 
   //Stats jittered
   double means[NB_CHANNELS], vars[NB_CHANNELS];
-  //Pixel_Stats *jitteredStats = (Pixel_Stats*)malloc(sizeof(Pixel_Stats)* NB_JITTERED_SAMPLE);
+  Pixel_Stats *jitteredStats = (Pixel_Stats*)malloc(sizeof(Pixel_Stats)* NB_JITTERED_SAMPLE);
   for (int p = 0; p < NB_JITTERED_SAMPLE; p++)
   {
     getNeighboursPixelStats(jitteredGrid[p], DEFAULT_SAMPLE_SIZE_SQUARED, imsLAB, imsRows, imsCols, means, vars);
-    //jitteredStats[p].data[0] = means[0];
-    //jitteredStats[p].data[1] = var[0];
+    jitteredStats[p].data[0] = means[0];
+    jitteredStats[p].data[1] = vars[0];
   }
 
   //Stats grey
-  //Pixel_Stats *imtStats = (Pixel_Stats*)malloc(sizeof(Pixel_Stats)* imtRows * imtCols);
+  Pixel_Stats *imtStats = (Pixel_Stats*)malloc(sizeof(Pixel_Stats)* imtRows * imtCols);
   for (int index = 0; index < (imtRows * imtCols); index++)
   {
-    //getNeighboursPixelStats(index, DEFAULT_SAMPLE_SIZE_SQUARED, imtLAB, imtRows, imtCols, means, var);
-    //imtStats[index].data[0] = means[0];
-    //imtStats[index].data[1] = var[0];
+    getNeighboursPixelStats(index, DEFAULT_SAMPLE_SIZE_SQUARED, imtLAB, imtRows, imtCols, means, vars);
+    imtStats[index].data[0] = means[0];
+    imtStats[index].data[1] = vars[0];
   }
 
   //Best match and copy
   Pixel* imdLAB = (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
   Pixel* imdColors = (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
   for (int i = 0; i < imtRows * imtCols; i++) {
+
+    ///Idée Trier jitteredGrid par les valeur de jitteredStats et faire une recheche dichotomique du plus proche.
+
     //int indexMatchJittered = bestMatch(imtStats[i], jitteredStats, match);
     //Pixel pix = imsLAB[jitteredGrid[indexMatchJittered]];
     //transfer(imsLAB[indexMatch], imtLAB[indexMatch], imdLAB[i], indexMatch);
