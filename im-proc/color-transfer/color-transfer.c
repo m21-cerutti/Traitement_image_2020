@@ -109,6 +109,12 @@ void imageArrayToPnm(Pixel* source, pnm dest, int rows, int cols)
 
 void getImageStats(Pixel* source, int rows, int cols, double means[NB_CHANNELS], double var[NB_CHANNELS])
 {
+  for (int k = 0; k < NB_CHANNELS; k++)
+  {
+    means[k] = 0;
+    var[k] = 0;
+  }
+
   for (int index = 0; index < (rows * cols); index++)
   {
     int i, j;
