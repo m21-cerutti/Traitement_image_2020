@@ -20,6 +20,8 @@
 #include <bcl.h>
 
 #define D 3
+#define NB_JITTERED_SAMPLE 200
+#define NB_NEIGHBOR 25
 
 double RGB2LMS[3*3] = {
   0.3811, 0.5783, 0.0402,
@@ -212,6 +214,31 @@ void labToRGB(Pixel* lab, Pixel* rgb, int rows, int cols)
 
   free(lms);
 }
+
+void jitteredSelect(Pixel *imsLAB, Pixel *jitteredGrid, int imsRows, int imsCols)
+{
+  for (int i = 0; i < NB_JITTERED_SAMPLE; i++)
+  {
+
+  }
+}
+
+void bestMatch(Pixel imtPixel, Pixel* neighbor, Pixel *jitteredGrid, Pixel match)
+{
+
+  //getImageStats(neighbor, rows, cols, means[NB_CHANNELS], var[NB_CHANNELS]);
+  for (int i = 0; i < NB_JITTERED_SAMPLE; i++)
+  {
+
+  }
+}
+
+void transfer(Pixel imtPixel, Pixel bestMatch, Pixel *imdLAB, int index)
+{
+  imdLAB[index].data[0] = imtPixel.data[0];
+  imdLAB[index].data[1] = bestMatch.data[1];
+  imdLAB[index].data[2] = bestMatch.data[2];
+}
 //////////////////////
 
 void process(char *ims, char *imt, char* imd){
@@ -230,15 +257,29 @@ void process(char *ims, char *imt, char* imd){
   int imtRows = pnm_get_height(imtInput);
   Pixel* imtColors = (Pixel*)malloc(sizeof(Pixel) * imtRows * imtCols);
   pnmToImageArray(imtInput, imtColors, imtRows, imtCols);
-  Pixel* imtLAB= (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
+  Pixel* imtLAB = (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
   rgbToLab(imtColors, imtLAB, imtRows, imtCols);
 
   //TODO
-  
-  labToRGB(imtLAB, imtColors, imtRows, imtCols);
+  Pixel* imdLAB = (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
+  Pixel* imdColors = (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
+
+  Pixel* jitteredGrid = (Pixel*)malloc(sizeof(Pixel)* NB_JITTERED_SAMPLE);
+  jitteredSelect(imsLAB, jitteredGrid, imsRows, imsCols);
+
+  Pixel match;
+  Pixel *imtNeighbor = (Pixel*)malloc(sizeof(Pixel)* NB_NEIGHBOR);
+
+  for (int i = 0; i < imtRows * imtCols; i++) {
+    bestMatch(imtLAB[i], imtNeighbor, jitteredGrid, match);
+    transfer(imtLAB[i], match, imdLAB, i);
+  }
+
+
+  labToRGB(imdLAB, imtColors, imtRows, imtCols);
 
   pnm output = pnm_new(imtCols, imtRows, PnmRawPpm);
-  imageArrayToPnm(imtColors, output, imtRows, imtCols);
+  imageArrayToPnm(imdColors, output, imtRows, imtCols);
   save_image(output, "", imd);
 
   free(imsColors);
