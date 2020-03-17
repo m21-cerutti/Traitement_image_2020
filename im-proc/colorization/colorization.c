@@ -243,7 +243,7 @@ void getNeighboursPixelStats(int indexPixel, int sampleSizeSquared, Pixel* sourc
   }
   int ip, jp;
   indexToPosition(indexPixel, &ip, &jp, cols);
-  
+
   for (int i = ip - sampleSizeSquared; i < (ip + sampleSizeSquared); i++)
   {
     for (int j = jp - sampleSizeSquared; j < (jp + sampleSizeSquared); j++)
@@ -263,12 +263,12 @@ void getNeighboursPixelStats(int indexPixel, int sampleSizeSquared, Pixel* sourc
       }
     }
   }
-  
+
 
   for (int k = 0; k < NB_CHANNELS; k++)
   {
-    means[k] /= rows * cols;
-    var[k] = (var[k] / (rows * cols)) - means[k] * means[k];
+    means[k] /= NB_NEIGHBOR;
+    var[k] = (var[k] / NB_NEIGHBOR) - means[k] * means[k];
   }
 }
 
@@ -308,17 +308,64 @@ void jitteredSelect(int *jitteredGrid, int rows, int cols )
   }
   //printf("p %d\n", p);
 }
+/*
+void quickshortJitteredGrid(Pixel *jitteredGrid, Pixel_Stats *jitteredStats)
+{
 
-int bestMatch(Pixel_Stats imtPixel, Pixel *jitteredGrid)
+}
+
+int binarySearch(Pixel *jitteredGrid, int start, int end, Pixel imtPixel)
+{
+	// Base condition (search space is exhausted)
+	if (low > high)
+		return -1;
+
+	// we find the mid value in the search space and
+	// compares it with target value
+
+	int mid = (low + high)/2;	// overflow can happen
+	// int mid = low + (high - low)/2;
+
+	// Base condition (target value is found)
+	if (imtPixel == jitteredGrid[mid])
+		return mid;
+
+	// discard all elements in the right search space
+	// including the mid element
+	else if (imtPixel < jitteredGrid[mid])
+		return binarySearch(A, low,  mid - 1, imtPixel);
+
+	// discard all elements in the left search space
+	// including the mid element
+	else
+		return binarySearch(jitteredGrid, mid + 1,  high, imtPixel);
+}*/
+
+int bestMatch(Pixel_Stats imtPixel, Pixel_Stats *jitteredGrid)
 {
   //TODO see process for idea
-  return 0;
+  int indexBestMatch = 0;
+  double imtStat = imtPixel.data[0] + imtPixel.data[1];
+  double match;
+  double bestMatch = jitteredGrid[0].data[0] + jitteredGrid[0].data[1];
+
+  for (int i = 1; i < NB_JITTERED_SAMPLE; i++)
+  {
+    match = jitteredGrid[i].data[0] + jitteredGrid[i].data[1];
+    if (fabs(imtStat - match) < fabs(imtStat - bestMatch)) {
+      indexBestMatch = i;
+      bestMatch = match;
+    }
+  }
+
+  return indexBestMatch;
 }
 
 void transfer(Pixel greyLuminance, Pixel ColorAB, Pixel *imdLAB, int index)
 {
   imdLAB[index].data[0] = greyLuminance.data[0];
   imdLAB[index].data[1] = ColorAB.data[1];
+  printf("%f %f\n", ColorAB.data[1], ColorAB.data[2]);
   imdLAB[index].data[2] = ColorAB.data[2];
 }
 //////////////////////
@@ -368,6 +415,7 @@ void process(char *ims, char *imt, char* imd){
   //Best match and copy
   Pixel* imdLAB = (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
   Pixel* imdColors = (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
+  //quickshortJitteredGrid(jitteredGrid, jitteredStats);
   for (int index = 0; index < imtRows * imtCols; index++) {
 
     /// Idée Trier jitteredGrid par les valeur de jitteredStats et faire une recherche dichotomique du plus proche.
@@ -376,9 +424,11 @@ void process(char *ims, char *imt, char* imd){
     int indexMatchJittered = bestMatch(imtStats[index], jitteredStats);
     int indexMatch = jitteredGrid[indexMatchJittered];
 
-    transfer(imsLAB[indexMatch], imtLAB[index], imdLAB, index);
+    transfer(imtLAB[index], imsLAB[indexMatch], imdLAB, index);
+    printf("%f\n", imdLAB[index].data[0]);
   }
 
+  /*
   //DEBUG JITTERED
   Pixel* imsJitteredDebug = (Pixel*)malloc(sizeof(Pixel)* imsRows * imsCols);
   for (int p = 0; p < NB_JITTERED_SAMPLE; p++)
@@ -392,9 +442,13 @@ void process(char *ims, char *imt, char* imd){
   pnm debug = pnm_new(imsCols, imsRows, PnmRawPpm);
   imageArrayToPnm(imsJitteredDebug, debug, imsRows, imsCols);
   save_image(debug, "", "debug.ppm");
+  */
 
   //Reconvert
-  labToRGB(imdLAB, imtColors, imtRows, imtCols);
+  labToRGB(imdLAB, imdColors, imtRows, imtCols);
+  for (int i = 0; i < imtRows*imtCols; i++) {
+    printf("%f\n", imdColors->data[0]);
+  }
   pnm output = pnm_new(imtCols, imtRows, PnmRawPpm);
   imageArrayToPnm(imdColors, output, imtRows, imtCols);
   save_image(output, "", imd);
