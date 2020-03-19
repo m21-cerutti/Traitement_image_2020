@@ -183,21 +183,6 @@ void matrixProduct(double* M1, int rows1, int cols1, double* M2, int rows2, int 
   }
 }
 
-void printMatrix(double* M, int rows, int cols)
-{
-  for (int i = 0; i < rows; i++)
-  {
-    printf("[ ");
-    for (int j = 0; j < cols; j++)
-    {
-      int index = positionToIndex(i, j, cols);
-      printf("\t%lf\t", M[index]);
-    }
-    printf(" ]\n");
-  }
-  printf("\n");
-}
-
 void rgbToLab (Pixel* rgb, Pixel* lab, int rows, int cols)
 {
   Pixel* lms = (Pixel*)malloc(sizeof(Pixel)* rows * cols);
@@ -283,9 +268,9 @@ void jitteredSelect(int *jitteredGrid, int rows, int cols )
   int offsetX = cols / sqrt(NB_JITTERED_SAMPLE);
 
   int p = 0;
-  for (int i = offsetY/2.; i < rows; i+=offsetY)
+  for (int i = offsetY; i < rows; i+=offsetY)
   {
-    for (int j = offsetX/2.; j < cols; j+=offsetX)
+    for (int j = offsetX; j < cols; j+=offsetX)
     {
       //Random distribution
       int newi = i + (int)randInRange(-offsetY/2., offsetY/2.);
@@ -294,79 +279,14 @@ void jitteredSelect(int *jitteredGrid, int rows, int cols )
       int index = positionToIndex(newi, newj, cols);
       jitteredGrid[p] = index;
 
-      printf("ind %d\n", index);
       p++;
     }
   }
-  //printf("p %d\n", p);
 }
 
-int split(int *jitteredGrid, Pixel_Stats *JitteredStats, int start,int end)
-{
-  int p=jitteredGrid[start];
-  int i=start,j=end,temp;
-  Pixel_Stats tmp; //NOT USED
-  while(i<j)
-  {
-    while(jitteredGrid[i]<=p)
-    i++;
-    while(jitteredGrid[j]>p)
-    j--;
-    if(i<j) {
-      temp=jitteredGrid[i],jitteredGrid[i]=jitteredGrid[j],jitteredGrid[j]=temp;
-      tmp=JitteredStats[i];
-      JitteredStats[i] = JitteredStats[j];
-      //printf("%f\n",tmp.data[0]);
-      //JitteredStats[j] = tmp;
-      //tmp=JitteredStats[i],JitteredStats[i]=JitteredStats[j],JitteredStats[j]=tmp;
-    }
-  }
-  jitteredGrid[start]=jitteredGrid[j];
-  jitteredGrid[j]=p;
-  return j;
-}
-
-void quickshortJitteredGrid(int *jitteredGrid, Pixel_Stats *jitteredStats, int start, int end)
-{
-  int s;
-  if (start>=end)
-    return;
-  s = split(jitteredGrid, jitteredStats, start,end);
-  quickshortJitteredGrid(jitteredGrid, jitteredStats, start,s-1);
-  quickshortJitteredGrid(jitteredGrid, jitteredStats, s+1,end);
-}
-
-/*
-int binarySearch(Pixel *jitteredGrid, int start, int end, Pixel imtPixel)
-{
-	// Base condition (search space is exhausted)
-	if (low > high)
-		return -1;
-
-	// we find the mid value in the search space and
-	// compares it with target value
-
-	int mid = (low + high)/2;	// overflow can happen
-	// int mid = low + (high - low)/2;
-
-	// Base condition (target value is found)
-	if (imtPixel == jitteredGrid[mid])
-		return mid;
-
-	// discard all elements in the right search space
-	// including the mid element
-	else if (imtPixel < jitteredGrid[mid])
-		return binarySearch(A, low,  mid - 1, imtPixel);
-
-	// discard all elements in the left search space
-	// including the mid element
-	else
-		return binarySearch(jitteredGrid, mid + 1,  high, imtPixel);
-}*/
 
 int bestMatch(Pixel_Stats imtPixel, Pixel_Stats *jitteredGrid)
 {
-  //TODO see process for idea
   int indexBestMatch = 0;
   double imtStat = imtPixel.data[0] + imtPixel.data[1];
   double match;
@@ -388,7 +308,6 @@ void transfer(Pixel greyLuminance, Pixel ColorAB, Pixel *imdLAB, int index)
 {
   imdLAB[index].data[0] = greyLuminance.data[0];
   imdLAB[index].data[1] = ColorAB.data[1];
-  //printf("%f %f\n", ColorAB.data[1], ColorAB.data[2]);
   imdLAB[index].data[2] = ColorAB.data[2];
 }
 //////////////////////
@@ -414,6 +333,7 @@ void process(char *ims, char *imt, char* imd){
 
   //Jittered grid
   int* jitteredGrid = (int*)malloc(sizeof(int)* NB_JITTERED_SAMPLE);
+
   jitteredSelect(jitteredGrid, imsRows, imsCols);
 
   //Stats jittered
@@ -439,11 +359,6 @@ void process(char *ims, char *imt, char* imd){
   Pixel* imdLAB = (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
   Pixel* imdColors = (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
 
-  //quickshortJitteredGrid(jitteredGrid, jitteredStats, 0, NB_JITTERED_SAMPLE);
-  for (int i = 0; i < NB_JITTERED_SAMPLE; i++)
-    printf("%d\n", jitteredGrid[i]);
-
-
   for (int index = 0; index < imtRows * imtCols; index++) {
 
     /// Idée Trier jitteredGrid par les valeur de jitteredStats et faire une recherche dichotomique du plus proche.
@@ -452,40 +367,13 @@ void process(char *ims, char *imt, char* imd){
     int indexMatchJittered = bestMatch(imtStats[index], jitteredStats);
     int indexMatch = jitteredGrid[indexMatchJittered];
 
-    //transfer(imtLAB[index], imsLAB[indexMatch], imdLAB, index);
-    //printf("%f\n", imdLAB[index].data[0]);
-  }
+    transfer(imtLAB[index], imsLAB[indexMatch], imdLAB, index);
 
-  
-  //DEBUG JITTERED
-  Pixel* imsJitteredDebug = (Pixel*)malloc(sizeof(Pixel)* imsRows * imsCols);
-
-  for (int index = 0; index < (imsRows * imsCols); index++)
-  {
-    for (int k = 0; k < NB_CHANNELS; k++)
-    {
-      imsJitteredDebug[index].data[k] =  255;
-    }
   }
-
-  for (int p = 0; p < NB_JITTERED_SAMPLE; p++)
-  {
-    int index = jitteredGrid[p];
-    for (int k = 0; k < NB_CHANNELS; k++)
-    {
-      imsJitteredDebug[index].data[k] =  0;
-    }
-  }
-  pnm debug = pnm_new(imsCols, imsRows, PnmRawPpm);
-  imageArrayToPnm(imsJitteredDebug, debug, imsRows, imsCols);
-  save_image(debug, "", "debug.ppm");
-  
 
   //Reconvert
   labToRGB(imdLAB, imdColors, imtRows, imtCols);
-  for (int i = 0; i < imtRows*imtCols; i++) {
-    //printf("%f\n", imdColors->data[0]);
-  }
+
   pnm output = pnm_new(imtCols, imtRows, PnmRawPpm);
   imageArrayToPnm(imdColors, output, imtRows, imtCols);
   save_image(output, "", imd);
