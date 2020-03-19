@@ -283,9 +283,9 @@ void jitteredSelect(int *jitteredGrid, int rows, int cols )
   int offsetX = cols / sqrt(NB_JITTERED_SAMPLE);
 
   int p = 0;
-  for (int i = offsetY; i < rows; i+=offsetY)
+  for (int i = offsetY/2.; i < rows; i+=offsetY)
   {
-    for (int j = offsetX; j < cols; j+=offsetX)
+    for (int j = offsetX/2.; j < cols; j+=offsetX)
     {
       //Random distribution
       int newi = i + (int)randInRange(-offsetY/2., offsetY/2.);
@@ -295,7 +295,6 @@ void jitteredSelect(int *jitteredGrid, int rows, int cols )
       jitteredGrid[p] = index;
 
       printf("ind %d\n", index);
-      //printf("indjit %d\n", p);
       p++;
     }
   }
@@ -440,7 +439,7 @@ void process(char *ims, char *imt, char* imd){
   Pixel* imdLAB = (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
   Pixel* imdColors = (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
 
-  quickshortJitteredGrid(jitteredGrid, jitteredStats, 0, NB_JITTERED_SAMPLE);
+  //quickshortJitteredGrid(jitteredGrid, jitteredStats, 0, NB_JITTERED_SAMPLE);
   for (int i = 0; i < NB_JITTERED_SAMPLE; i++)
     printf("%d\n", jitteredGrid[i]);
 
@@ -460,12 +459,21 @@ void process(char *ims, char *imt, char* imd){
   
   //DEBUG JITTERED
   Pixel* imsJitteredDebug = (Pixel*)malloc(sizeof(Pixel)* imsRows * imsCols);
+
+  for (int index = 0; index < (imsRows * imsCols); index++)
+  {
+    for (int k = 0; k < NB_CHANNELS; k++)
+    {
+      imsJitteredDebug[index].data[k] =  255;
+    }
+  }
+
   for (int p = 0; p < NB_JITTERED_SAMPLE; p++)
   {
     int index = jitteredGrid[p];
     for (int k = 0; k < NB_CHANNELS; k++)
     {
-      imsJitteredDebug[index].data[k] =  255;
+      imsJitteredDebug[index].data[k] =  0;
     }
   }
   pnm debug = pnm_new(imsCols, imsRows, PnmRawPpm);
