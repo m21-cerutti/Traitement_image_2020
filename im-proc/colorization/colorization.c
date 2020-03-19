@@ -272,15 +272,9 @@ void getNeighboursPixelStats(int indexPixel, int sampleSizeSquared, Pixel* sourc
   }
 }
 
-double rand_gen() {
-   // return a uniformly distributed random value
-   return ( (double)(rand()) + 1. )/( (double)(RAND_MAX) + 1. );
-}
-double normalRandom() {
-   // return a normally distributed random value
-   double v1=rand_gen();
-   double v2=rand_gen();
-   return cos(2*3.14*v2)*sqrt(-2.*log(v1));
+double randInRange(double min, double max)
+{
+  return min + (double) (rand() / (double) (RAND_MAX + 1.) * (max - min + 1.));
 }
 
 void jitteredSelect(int *jitteredGrid, int rows, int cols )
@@ -294,17 +288,14 @@ void jitteredSelect(int *jitteredGrid, int rows, int cols )
     for (int j = offsetX; j < cols; j+=offsetX)
     {
       //Random distribution
-      int newi = i + (int)((rand_gen()-0.5)*offsetY/2);
-      int newj = j + (int)((rand_gen()-0.5)*offsetX/2);
-
-      //Gaussian
-      int newi = i + (int)((normalRandom()-0.5)*offsetY/2.);
-      int newj = j + (int)((normalRandom()-0.5)*offsetX/2.);
+      int newi = i + (int)randInRange(-offsetY/2., offsetY/2.);
+      int newj = j + (int)randInRange(-offsetY/2., offsetY/2.);
 
       int index = positionToIndex(newi, newj, cols);
       jitteredGrid[p] = index;
 
       printf("ind %d\n", index);
+      //printf("indjit %d\n", p);
       p++;
     }
   }
@@ -315,7 +306,7 @@ int split(int *jitteredGrid, Pixel_Stats *JitteredStats, int start,int end)
 {
   int p=jitteredGrid[start];
   int i=start,j=end,temp;
-  Pixel_Stats tmp;
+  Pixel_Stats tmp; //NOT USED
   while(i<j)
   {
     while(jitteredGrid[i]<=p)
@@ -462,11 +453,11 @@ void process(char *ims, char *imt, char* imd){
     int indexMatchJittered = bestMatch(imtStats[index], jitteredStats);
     int indexMatch = jitteredGrid[indexMatchJittered];
 
-    transfer(imtLAB[index], imsLAB[indexMatch], imdLAB, index);
+    //transfer(imtLAB[index], imsLAB[indexMatch], imdLAB, index);
     //printf("%f\n", imdLAB[index].data[0]);
   }
 
-  /*
+  
   //DEBUG JITTERED
   Pixel* imsJitteredDebug = (Pixel*)malloc(sizeof(Pixel)* imsRows * imsCols);
   for (int p = 0; p < NB_JITTERED_SAMPLE; p++)
@@ -480,7 +471,7 @@ void process(char *ims, char *imt, char* imd){
   pnm debug = pnm_new(imsCols, imsRows, PnmRawPpm);
   imageArrayToPnm(imsJitteredDebug, debug, imsRows, imsCols);
   save_image(debug, "", "debug.ppm");
-  */
+  
 
   //Reconvert
   labToRGB(imdLAB, imdColors, imtRows, imtCols);
