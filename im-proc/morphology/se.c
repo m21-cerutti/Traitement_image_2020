@@ -12,7 +12,7 @@ void drawLineH(pnm shape, int hs) {
   int size = 2*hs+1;
   for (int y = 0; y < size; y++) {
     for (int channel = 0; channel < 3; channel++) {
-      pnm_set_component(shape, hs+1, y, channel, 255);
+      pnm_set_component(shape, hs, y, channel, 255);
     }
   }
 }
@@ -21,7 +21,7 @@ void drawLineV(pnm shape, int hs) {
   int size = 2*hs+1;
   for (int x = 0; x < size; x++) {
     for (int channel = 0; channel < 3; channel++) {
-      pnm_set_component(shape, x, hs+1, channel, 255);
+      pnm_set_component(shape, x, hs, channel, 255);
     }
   }
 }
@@ -99,9 +99,7 @@ Plus(pnm shape, int hs)
 void
 Diamond(pnm shape, int hs)
 {
-  //Plus(shape, hs);
-
- //int size = 2*hs+1;
+ int size = 2*hs+1;
 
   for (int i = 0; i < hs+1; i++) {
     for (int ldiv = 0; ldiv < i+1; ldiv++) {
@@ -112,26 +110,14 @@ Diamond(pnm shape, int hs)
     }
   }
 
-  for (int i = hs; i > 0; i--) {
+  for (int i = hs; i >= 0; i--) {
     for (int ldiv = 0; ldiv < i+1; ldiv++) {
       for (int channel = 0; channel < 3; channel++) {
-        pnm_set_component(shape, hs + i, hs - ldiv, channel, 255);
-        pnm_set_component(shape, hs + i, hs + ldiv, channel, 255);
+        pnm_set_component(shape, size - i -1, hs - ldiv, channel, 255);
+        pnm_set_component(shape, size - i -1, hs + ldiv, channel, 255);
       }
     }
   }
-  /*
-  for (int i = 0; i < hs; i++) {
-    
-    int act_half_size = hs - i ;
-
-    for (int j = -act_half_size; j < act_half_size; j++) {
-      for (int channel = 0; channel < 3; channel++) {
-        pnm_set_component(shape, hs + i, hs + j, channel, 255);
-      }
-    }
-  }
-  */
 }
 
 void
