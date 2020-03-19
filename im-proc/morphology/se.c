@@ -117,33 +117,33 @@ se(int s, int hs){
   pnm shape = pnm_new(size, size, PnmRawPpm);
 
   switch(s) {
-    case 0:
+    case SQUARE:
       Square(shape, hs);
       break;
-    case 1:
+    case DIAMOND:
       puts("diamond");
       //Diamond(shape, hs);
       break;
-    case 2:
+    case DISK:
       //Disk(shape, hs);
       puts("disk");
       break;
-    case 3:
+    case LINE_V:
       LineV(shape, hs);
       break;
-    case 4:
+    case DIAG_R:
       DiagR(shape, hs);
       break;
-    case 5:
+    case LINE_H:
       LineH(shape, hs);
       break;
-    case 6:
+    case DIAG_L:
       DiagL(shape, hs);
       break;
-    case 7:
+    case CROSS:
       Cross(shape, hs);
       break;
-    case 8:
+    case PLUS:
       Plus(shape, hs);
       break;
     default:
