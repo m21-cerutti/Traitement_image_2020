@@ -59,47 +59,6 @@ Square(pnm shape, int hs)
 }
 
 void
-Diamond(pnm shape, int hs)
-{
- int size = 2*hs+1;
-
-  for (int i = 0; i < size/2; i++) {
-    int act_half_size = i;
-    for (int j = -act_half_size; j < act_half_size; j++) {
-      for (int channel = 0; channel < 3; channel++) {
-        pnm_set_component(shape, i, hs + j, channel, 255);
-      }
-    }
-  }
-  
-  for (int i = 0; i < size; i++) {
-    
-    int act_half_size = hs - i;
-
-    for (int j = -act_half_size; j < act_half_size; j++) {
-      for (int channel = 0; channel < 3; channel++) {
-        pnm_set_component(shape, hs + i, hs + j, channel, 255);
-      }
-    }
-  }
-}
-
-void
-Disk(pnm shape, int hs)
-{
-  int size = 2*hs+1;
-
-  for (int i = 0; i < size; i++) {
-    int act_half_size = cos(i/(hs*.5)) * hs;
-    for (int j = -act_half_size; j < act_half_size; j++) {
-      for (int channel = 0; channel < 3; channel++) {
-        pnm_set_component(shape, i, hs+j, channel, 255);
-      }
-    }
-  }
-}
-
-void
 LineV(pnm shape, int hs)
 {
   drawLineV(shape, hs);
@@ -135,6 +94,59 @@ Plus(pnm shape, int hs)
 {
   drawLineH(shape, hs);
   drawLineV(shape, hs);
+}
+
+void
+Diamond(pnm shape, int hs)
+{
+  //Plus(shape, hs);
+
+ //int size = 2*hs+1;
+
+  for (int i = 0; i < hs+1; i++) {
+    for (int ldiv = 0; ldiv < i+1; ldiv++) {
+      for (int channel = 0; channel < 3; channel++) {
+        pnm_set_component(shape, i, hs - ldiv, channel, 255);
+        pnm_set_component(shape, i, hs + ldiv, channel, 255);
+      }
+    }
+  }
+
+  for (int i = hs; i > 0; i--) {
+    for (int ldiv = 0; ldiv < i+1; ldiv++) {
+      for (int channel = 0; channel < 3; channel++) {
+        pnm_set_component(shape, hs + i, hs - ldiv, channel, 255);
+        pnm_set_component(shape, hs + i, hs + ldiv, channel, 255);
+      }
+    }
+  }
+  /*
+  for (int i = 0; i < hs; i++) {
+    
+    int act_half_size = hs - i ;
+
+    for (int j = -act_half_size; j < act_half_size; j++) {
+      for (int channel = 0; channel < 3; channel++) {
+        pnm_set_component(shape, hs + i, hs + j, channel, 255);
+      }
+    }
+  }
+  */
+}
+
+void
+Disk(pnm shape, int hs)
+{
+  int size = 2*hs+1;
+
+  for (int i = 0; i < size; i++) {
+    int act_half_size = fabs(sin(i)) * (size/2.);
+    for (int j = -act_half_size; j < act_half_size; j++) {
+      for (int channel = 0; channel < 3; channel++) {
+        pnm_set_component(shape, i, size/2. + j, channel, 255);
+      }
+    }
+  }
 }
 
 pnm

@@ -248,8 +248,6 @@ void getNeighboursPixelStats(int indexPixel, int sampleSizeSquared, Pixel* sourc
       }
     }
   }
-
-
   for (int k = 0; k < NB_CHANNELS; k++)
   {
     means[k] /= NB_NEIGHBOR;
