@@ -17,6 +17,7 @@ BIN=\
 	closing\
 	add\
 	substract\
+	binarization\
 
 .PHONY: all
 all: $(OBJ) $(BIN)
@@ -60,6 +61,18 @@ se:
 	./make-se 6 10 se-6.ppm
 	./make-se 7 10 se-7.ppm
 	./make-se 8 10 se-8.ppm
+
+de:
+	./dilation 2 10 ../data/lena-gray.ppm dilation-disk.ppm
+	./dilation 7 10 ../data/lena-gray.ppm dilation-cross.ppm
+	./erosion 2 10 ../data/lena-gray.ppm erosion-disk.ppm
+	./erosion 7 10 ../data/lena-gray.ppm erosion-cross.ppm
+
+oc:
+	./opening 2 10 ../data/lena-gray.ppm opening-disk.ppm
+	./opening 7 10 ../data/lena-gray.ppm opening-cross.ppm
+	./closing 2 10 ../data/lena-gray.ppm closing-disk.ppm
+	./closing 7 10 ../data/lena-gray.ppm closing-cross.ppm
 
 .PHONY: clean cleanall
 clean:
