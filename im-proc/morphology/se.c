@@ -9,7 +9,7 @@
 enum {SQUARE, DIAMOND, DISK, LINE_V, DIAG_R, LINE_H, DIAG_L, CROSS, PLUS};
 
 void drawLineH(pnm shape, int hs) {
-  int size = 2*hs + 1;
+  int size = 2*hs+1;
   for (int y = 0; y < size; y++) {
     for (int channel = 0; channel < 3; channel++) {
       pnm_set_component(shape, hs+1, y, channel, 255);
@@ -18,7 +18,7 @@ void drawLineH(pnm shape, int hs) {
 }
 
 void drawLineV(pnm shape, int hs) {
-  int size = 2*hs + 1;
+  int size = 2*hs+1;
   for (int x = 0; x < size; x++) {
     for (int channel = 0; channel < 3; channel++) {
       pnm_set_component(shape, x, hs+1, channel, 255);
@@ -27,7 +27,7 @@ void drawLineV(pnm shape, int hs) {
 }
 
 void drawDiagL(pnm shape, int hs) {
-  int size = 2*hs + 1;
+  int size = 2*hs+1;
   for (int i = 0; i < size; i++) {
     for (int channel = 0; channel < 3; channel++) {
       pnm_set_component(shape, i, i, channel, 255);
@@ -36,7 +36,7 @@ void drawDiagL(pnm shape, int hs) {
 }
 
 void drawDiagR(pnm shape, int hs) {
-  int size = 2*hs + 1;
+  int size = 2*hs+1;
   for (int i = 0 ; i < size; i++) {
     for (int channel = 0; channel < 3; channel++) {
       pnm_set_component(shape, ((size-1) - i), i, channel, 255);
@@ -47,7 +47,7 @@ void drawDiagR(pnm shape, int hs) {
 void
 Square(pnm shape, int hs)
 {
-  int size = 2*hs + 1;
+  int size = 2*hs+1;
 
   for (int i = 0; i < size; i++) {
     for (int j = 0; j < size; j++) {
@@ -61,15 +61,42 @@ Square(pnm shape, int hs)
 void
 Diamond(pnm shape, int hs)
 {
-  (void)shape;
-  (void)hs;
+ int size = 2*hs+1;
+
+  for (int i = 0; i < size/2; i++) {
+    int act_half_size = i;
+    for (int j = -act_half_size; j < act_half_size; j++) {
+      for (int channel = 0; channel < 3; channel++) {
+        pnm_set_component(shape, i, hs + j, channel, 255);
+      }
+    }
+  }
+  
+  for (int i = 0; i < size; i++) {
+    
+    int act_half_size = hs - i;
+
+    for (int j = -act_half_size; j < act_half_size; j++) {
+      for (int channel = 0; channel < 3; channel++) {
+        pnm_set_component(shape, hs + i, hs + j, channel, 255);
+      }
+    }
+  }
 }
 
 void
 Disk(pnm shape, int hs)
 {
-  (void)shape;
-  (void)hs;
+  int size = 2*hs+1;
+
+  for (int i = 0; i < size; i++) {
+    int act_half_size = cos(i/(hs*.5)) * hs;
+    for (int j = -act_half_size; j < act_half_size; j++) {
+      for (int channel = 0; channel < 3; channel++) {
+        pnm_set_component(shape, i, hs+j, channel, 255);
+      }
+    }
+  }
 }
 
 void
@@ -113,7 +140,7 @@ Plus(pnm shape, int hs)
 pnm
 se(int s, int hs){
 
-  int size = 2*hs + 1;
+  int size = 2*hs+1;
   pnm shape = pnm_new(size, size, PnmRawPpm);
 
   switch(s) {
@@ -121,12 +148,10 @@ se(int s, int hs){
       Square(shape, hs);
       break;
     case DIAMOND:
-      puts("diamond");
-      //Diamond(shape, hs);
+      Diamond(shape, hs);
       break;
     case DISK:
-      //Disk(shape, hs);
-      puts("disk");
+      Disk(shape, hs);
       break;
     case LINE_V:
       LineV(shape, hs);

@@ -52,7 +52,7 @@ test-color: all
 
 se:
 	./make-se 0 10 se-0.ppm
-	./make-se 1 15 se-1.ppm
+	./make-se 1 20 se-1.ppm
 	./make-se 2 20 se-2.ppm
 	./make-se 3 10 se-3.ppm
 	./make-se 4 10 se-4.ppm
