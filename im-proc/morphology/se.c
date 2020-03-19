@@ -123,15 +123,34 @@ Diamond(pnm shape, int hs)
 void
 Disk(pnm shape, int hs)
 {
-  int size = 2*hs+1;
+ //int size = 2*hs+1;
 
-  for (int i = 0; i < size; i++) {
-    int act_half_size = fabs(sin(i)) * (size/2.);
-    for (int j = -act_half_size; j < act_half_size; j++) {
+  int d, y, x;
+ 
+  d = 3 - (2 * hs);
+  x = 0;
+  y = hs;
+ 
+  while (y >= x) {
+
       for (int channel = 0; channel < 3; channel++) {
-        pnm_set_component(shape, i, size/2. + j, channel, 255);
+    pnm_set_component(shape, hs + x, hs + y, channel, 255);
+    pnm_set_component(shape, hs + y, hs + x, channel, 255);
+    pnm_set_component(shape, hs - x, hs + y, channel, 255);
+    pnm_set_component(shape, hs - y, hs + x, channel, 255);
+    pnm_set_component(shape, hs + x, hs - y, channel, 255);
+    pnm_set_component(shape, hs + y, hs - x, channel, 255);
+    pnm_set_component(shape, hs - x, hs - y, channel, 255);
+    pnm_set_component(shape, hs - y, hs - x, channel, 255);
       }
+ 
+    if (d < 0)
+      d = d + (4 * x) + 6;
+    else {
+      d = d + 4 * (x - y) + 10;
+      y--;
     }
+    x++;
   }
 }
 
