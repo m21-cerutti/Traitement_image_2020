@@ -298,11 +298,13 @@ void jitteredSelect(int *jitteredGrid, int rows, int cols )
       int newj = j + (int)((rand_gen()-0.5)*offsetX/2);
 
       //Gaussian
-      //int newi = i + (int)((normalRandom()-0.5)*offsetY/2);
-      //int newj = j + (int)((normalRandom()-0.5)*offsetX/2);
+      int newi = i + (int)((normalRandom()-0.5)*offsetY/2.);
+      int newj = j + (int)((normalRandom()-0.5)*offsetX/2.);
 
       int index = positionToIndex(newi, newj, cols);
       jitteredGrid[p] = index;
+
+      printf("ind %d\n", index);
       p++;
     }
   }
@@ -460,7 +462,7 @@ void process(char *ims, char *imt, char* imd){
     int indexMatchJittered = bestMatch(imtStats[index], jitteredStats);
     int indexMatch = jitteredGrid[indexMatchJittered];
 
-    //transfer(imtLAB[index], imsLAB[indexMatch], imdLAB, index);
+    transfer(imtLAB[index], imsLAB[indexMatch], imdLAB, index);
     //printf("%f\n", imdLAB[index].data[0]);
   }
 
