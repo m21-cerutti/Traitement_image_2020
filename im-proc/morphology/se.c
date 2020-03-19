@@ -144,21 +144,24 @@ void Diamond(pnm shape, int hs)
   }
 }
 
-void
-Disk(pnm shape, int hs)
+void Disk(pnm shape, int hs)
 {
-  int size = 2*hs+1;
-  int radius = hs*hs;
+  int size = 2 * hs + 1;
+  int radius = hs * hs;
 
-  for (int i = 0; i < size; i++) {
-    for (int j = 0; j < size; j++) {
+  for (int i = 0; i < size; i++)
+  {
+    for (int j = 0; j < size; j++)
+    {
 
-      int xMinusR = i-hs;
-      int yMinusR = j-hs;
+      int xMinusR = i - hs;
+      int yMinusR = j - hs;
 
       int dist = xMinusR * xMinusR + yMinusR * yMinusR;
-      if (dist <= radius) {
-        for (int channel = 0; channel < 3; channel++) {
+      if (dist <= radius)
+      {
+        for (int channel = 0; channel < 3; channel++)
+        {
           pnm_set_component(shape, i, j, channel, 255);
         }
       }
