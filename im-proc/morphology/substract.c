@@ -32,12 +32,12 @@ main(int argc, char* argv[])
 
   for (int i = 0; i < imsRows; i++) {
     for (int j = 0; j < imsCols; j++) {
-      int a = pnm_get_component(ims1, i, j, 0);
-      int b = pnm_get_component(ims2, i, j, 0);
+      int a = pnm_get_component(ims1, j, i, 0);
+      int b = pnm_get_component(ims2, j, i, 0);
       int res = grad(a,b);
       //int laplace = pnm_get_component(ims2, i, j, 0);
       for (int channel = 0; channel < 3; channel++)
-        pnm_set_component(output, i, j, channel, res);
+        pnm_set_component(output, j, i, channel, res);
     }
   }
 
