@@ -20,10 +20,11 @@ main(int argc, char* argv[])
   int hs = atoi(argv[2]);
 
   pnm source = pnm_load(argv[3]);
+  pnm tmp = pnm_new(pnm_get_width(source), pnm_get_height(source), PnmRawPpm);
   pnm output = pnm_new(pnm_get_width(source), pnm_get_height(source), PnmRawPpm);
 
-  process(se, hs, source, output, &maximum);
-  process(se, hs, source, output, &minimum);
+  process(se, hs, source, tmp, &minimum);
+  process(se, hs, tmp, output, &maximum);
 
   pnm_save(output, PnmRawPpm, argv[4]);
 
