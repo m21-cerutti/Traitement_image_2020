@@ -33,7 +33,8 @@ substract:
 
 .PHONY: extract-gear
 extract-gear:
-	$(VIEWER) $(DATA)/gear.ppm
+	./opening 2 20 ../data/gear.ppm extract-disk.ppm
+	./substract ../data/gear.ppm  extract-disk.ppm extract-gear.ppm
 
 .PHONY: morphology-mrg morphology-lex morphology-bit
 morphology-mrg: se.o
