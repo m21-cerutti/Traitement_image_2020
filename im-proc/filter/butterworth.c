@@ -1,84 +1,74 @@
 #include <stdlib.h>
 #include <string.h>
 #include <float.h>
-#include <math.h> 
+#include <math.h>
 
 #include <bcl.h>
 #include <fft.h>
 
+#define dist(u,v) sqrt((u*u) + (v*v))
+
 float
 lowpass(int u, int v, int d0, int n, int w, int u0, int v0){
-  (void)u;
-  (void)v;
-  (void)d0;
-  (void)n;
-  (void)w;
   (void)u0;
-  (void)v0;  
-  return 0.0;
+  (void)v0;
+  (void)w;
+  double d = dist(u,v);
+  return 1/pow((d/d0),2*n);
 }
 
 float
 highpass(int u, int v, int d0, int n, int w, int u0, int v0){
-  (void)u;
-  (void)v;
-  (void)d0;
-  (void)n;
-  (void)w;
   (void)u0;
-  (void)v0;  
-  return 0.0;
+  (void)v0;
+  (void)w;
+  double d = dist(u,v);
+  return 1/pow((d0/d),2*n);
 }
 
 float
 bandreject(int u, int v, int d0, int n, int w, int u0, int v0){
-  (void)u;
-  (void)v;
-  (void)d0;
-  (void)n;
-  (void)w;
   (void)u0;
-  (void)v0;  
-  return 0.0;
+  (void)v0;
+  double d = dist(u,v);
+  double tmp = (d*w)/(d*d-d0*d0));
+  return 1/(1+pow(tmp,2*n);
 }
 
 float
 bandpass(int u, int v, int d0, int n, int w, int u0, int v0){
-  (void)u;
-  (void)v;
-  (void)d0;
-  (void)n;
-  (void)w;
-  (void)u0;
-  (void)v0;  
-  return 0.0;
+  return 1 - bandreject(u, v, d0, n, w, u0, v0);
 }
 
 float
 notch(int u, int v, int d0, int n, int w, int u0, int v0){
-  (void)u;
-  (void)v;
-  (void)d0;
-  (void)n;
   (void)w;
-  (void)u0;
-  (void)v0;  
-  return 0.0;
+  float d1 = dist((u-u0),(v-v0);
+  float d2 = dist((u+u0),(v+v0);
+  float tmp = (d0*d0)/(d1*d2);
+  return 1/(sqrt(tmp,2*n));
 }
 
-void 
-process(char* inp, char* out, 
+void
+process(char* inp, char* out,
 	int d0, int nx2, int ww, int u0, int v0,
-	float (*apply)(int, int, int, int, int, int, int))  
+	float (*apply)(int, int, int, int, int, int, int))
 {
-  (void)inp;
-  (void)out;
+    pnm input = pnm_load(inp);
+
+    int imsRows = pnm_get_height(input);
+    int imsCols = pnm_get_width(input);
+
+    pnm output = pnm_new(imsRows, imsCols, PnmRawPpm);
+
+    pnm_save(output, PnmRawPpm, out);
+
   (void)d0;
   (void)nx2;
   (void)ww;
   (void)u0;
   (void)v0;
-  (void)apply;  
+  (void)apply;
 }
 
 void usage (char *s){
