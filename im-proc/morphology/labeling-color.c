@@ -10,6 +10,13 @@
 #include <pnm.h>
 #include <memory.h>
 
+void indexToPosition(int index, int *i, int *j, const int rows)
+{
+  *i = index % rows;
+  *j = index / rows;
+}
+
+
 int _find(int p, int* roots)
 {
   while(roots[p]!=p) p=roots[p];
@@ -40,13 +47,15 @@ int _add(int p, int r, int* roots)
 }
 
 void
-process(pnm ims){
+process(pnm ims, char* imd){
   int             w     = pnm_get_width(ims);
   int             h     = pnm_get_height(ims);
   unsigned short *ps    = pnm_get_channel(ims, NULL, PnmRed);
   int             p     = 0;
   int             r     = -1;
   int            *roots = memory_alloc(w*h*sizeof(int));
+
+  pnm d = pnm_new(w,h,PnmRawPpm);
 
   for(int i=0; i<h; i++){
     for(int j=0; j<w; j++){
@@ -67,12 +76,35 @@ process(pnm ims){
   for(p=0; p<w*h; p++)
     roots[p] = _find(p, roots);
   int l=0;
+
+
+
   for(p=0; p<w*h; p++){
-    if(roots[p]==p)
+    int i, j;
+    indexToPosition(p, &i, &j, h);
+
+    int val[3];
+    for (int c = 0; c <3; c++) {
+      val[c] = pnm_get_component(ims, i, j, c);
+    }
+
+    if(roots[p]==p) {
+      printf("%d\n",l);
+      val[0]=127;
+      val[1]=057;
+      val[2]=230;
       roots[p] = l++;
-    else
+    }
+    else {
       roots[p] = roots[roots[p]];
+    }
+
+    for (int c = 0; c < 3; c++) {
+      pnm_set_component(d, i, j, c, val[c]);
+    }
   }
+
+  pnm_save(d,PnmRawPpm,imd);
 
   fprintf(stderr, "labeling: %d components found\n", l);
   memory_free(roots);
@@ -82,18 +114,18 @@ process(pnm ims){
 void
 usage(char* s)
 {
-  fprintf(stderr,"%s <ims>\n",s);
+  fprintf(stderr,"%s <ims> <imd>\n",s);
   exit(EXIT_FAILURE);
 }
 
-#define PARAM 1
+#define PARAM 2
 int
 main(int argc, char* argv[])
 {
   if(argc != PARAM+1)
     usage(argv[0]);
   pnm pnm_ims = pnm_load(argv[1]);
-  process(pnm_ims);
+  process(pnm_ims, argv[2]);
   pnm_free(pnm_ims);
   return EXIT_SUCCESS;
 }

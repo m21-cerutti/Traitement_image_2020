@@ -18,6 +18,7 @@ BIN=\
 	add\
 	substract\
 	binarization\
+	labeling-color\
 
 .PHONY: all
 all: $(OBJ) $(BIN)
@@ -30,11 +31,15 @@ opening: se.o morphology.o
 closing: se.o morphology.o
 add:
 substract:
+labeling:
+labeling-color:
 
 .PHONY: extract-gear
 extract-gear:
 	./opening 2 20 ../data/gear.ppm extract-disk.ppm
 	./substract ../data/gear.ppm  extract-disk.ppm extract-gear.ppm
+	./binarization 128 255 extract-gear.ppm binar-extract-gear.ppm
+	./labeling-color binar-extract-gear.ppm extract-gear-color.ppm
 
 .PHONY: morphology-mrg morphology-lex morphology-bit
 morphology-mrg: se.o
