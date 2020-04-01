@@ -5,6 +5,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 
 #include <pnm.h>
 #include <memory.h>
@@ -94,12 +95,14 @@ void process(pnm ims, char *imd)
 
   fprintf(stderr, "labeling: %d components found\n", l);
 
+  srand(time(NULL));
   unsigned short tableFalseColors[l * 3];
   for (int i = 0; i < l; i += 3)
   {
     for (int c = 0; c < 3; c++)
     {
-      tableFalseColors[i + c] = rand() % 255;
+      int val = i !=0 ? 5+(rand() % 254) : 0;
+      tableFalseColors[i + c] = val;
     }
   }
 
