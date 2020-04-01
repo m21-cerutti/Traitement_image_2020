@@ -4,8 +4,8 @@
 #include <se.h>
 
 #define NB_CHANNEL 3
-#define NB_BITS_CHANNEL 0xFF
-#define MASK_FIRST_CHANNEL 0x0000FF
+#define NB_BITS_CHANNEL 8
+#define NUMBER_VALUES 0x0000FF //255
 
 typedef unsigned short color3s;
 
@@ -13,7 +13,7 @@ void maximum(color3s *val, color3s *max)
 {
   if (*val < *max)
   {
-    *val = *max;
+    *max = *val;
   }
 }
 
@@ -21,7 +21,7 @@ void minimum(color3s *val, color3s *min)
 {
   if (*val > *min)
   {
-    *val = *min;
+    *min = *val;
   }
 }
 
@@ -31,9 +31,7 @@ color3s extractColor(pnm source, int i, int j)
   for (int c = 0; c < NB_CHANNEL; c++)
   {
     unsigned short val = pnm_get_component(source, i, j, c);
-    printf("In val   \t%d : %d\n", c, val);
     color3s channel_col = val << (c * NB_BITS_CHANNEL);
-    //printf("In chann \t%d : %d\n", c, channel_col);
     color = color|channel_col;
   }
   return color;
@@ -44,9 +42,7 @@ void putColor(pnm source, int i, int j, color3s color)
   for (int c = 0; c < NB_CHANNEL; c++)
   {
     color3s channel_col = (color >> (c * NB_BITS_CHANNEL));
-    //printf("Out channel \t%d : %d\n", c, channel_col);
-    unsigned short val = channel_col & MASK_FIRST_CHANNEL;
-    //printf("Out val \t%d : %d\n", c, val);
+    unsigned short val = channel_col & NUMBER_VALUES;
     pnm_set_component(source, i, j, c, val);
   }
 }
@@ -67,8 +63,6 @@ void process(int s,
     for (int j = 0; j < imsCols; j++)
     {
       color3s res = extractColor(ims, i, j);
-      printf("In %d\n", res);
-      /*
       for (int x = -hs; x < hs + 1; x++)
       {
         for (int y = -hs; y < hs + 1; y++)
@@ -80,11 +74,9 @@ void process(int s,
             continue;
 
           color3s val = extractColor(ims, i + y, j + x);
-          printf("In %d\n", val);
-          pf(&res, &val);
+          pf(&val, &res);
         }
-      }*/
-      //printf("Out %d\n", res);
+      }
       putColor(imd, i, j, res);
     }
   }
