@@ -1,9 +1,0 @@
-{
-    "files.associations": {
-        "stdio.h": "c",
-        "*.tcc": "c",
-        "xiosbase": "c",
-        "xlocale": "c",
-        "*.cuh": "c"
-    }
-}

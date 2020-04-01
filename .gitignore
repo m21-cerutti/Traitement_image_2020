@@ -52,3 +52,15 @@ Mkfile.old
 dkms.conf
 
 im-proc/morphology/*.ppm
+
+im-proc/morphology/closing
+
+im-proc/morphology/dilation
+
+im-proc/morphology/erosion
+
+im-proc/morphology/make-se
+
+im-proc/morphology/opening
+
+im-proc/.vscode/
