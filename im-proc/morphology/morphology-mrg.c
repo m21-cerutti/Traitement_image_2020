@@ -9,7 +9,7 @@ void maximum(unsigned short *val, unsigned short *max)
 {
   if (*val > *max)
   {
-    *val = *max;
+    *max = *val;
   }
 }
 
@@ -17,7 +17,7 @@ void minimum(unsigned short *val, unsigned short *min)
 {
   if (*val < *min)
   {
-    *val = *min;
+    *min = *val;
   }
 }
 
@@ -44,9 +44,9 @@ void process(int s,
         res[channel] = pnm_get_component(ims, i, j, channel);
       }
 
-      for (int x = -hs; x < hs+1; x++)
+      for (int x = -hs; x < hs + 1; x++)
       {
-        for (int y = -hs; y < hs+1; y++)
+        for (int y = -hs; y < hs + 1; y++)
         {
           if ((i + y) >= imsRows || (j + x) >= imsCols || (i + y) < 0 || (j + x) < 0)
             continue;
@@ -56,7 +56,7 @@ void process(int s,
           for (int channel = 0; channel < NB_CHANNEL; channel++)
           {
             val = pnm_get_component(ims, i + y, j + x, channel);
-            pf(&res[channel], &val);
+            pf(&val, &res[channel]);
           }
         }
       }

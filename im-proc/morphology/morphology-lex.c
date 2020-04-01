@@ -11,7 +11,7 @@ typedef unsigned short color3s;
 
 void maximum(color3s *val, color3s *max)
 {
-  if (*val > *max)
+  if (*val < *max)
   {
     *val = *max;
   }
@@ -19,7 +19,7 @@ void maximum(color3s *val, color3s *max)
 
 void minimum(color3s *val, color3s *min)
 {
-  if (*val < *min)
+  if (*val > *min)
   {
     *val = *min;
   }
@@ -27,25 +27,27 @@ void minimum(color3s *val, color3s *min)
 
 color3s extractColor(pnm source, int i, int j)
 {
-  color3s color;
-  for (int channel = 0; channel < NB_CHANNEL; channel++)
+  color3s color = 0;
+  for (int c = 0; c < NB_CHANNEL; c++)
   {
-    unsigned short val = pnm_get_component(source, i, j, channel);
-    color = (val << (channel * NB_BITS_CHANNEL)) | color;
-
-    //printf("In chann %d\n", val);
+    unsigned short val = pnm_get_component(source, i, j, c);
+    printf("In val   \t%d : %d\n", c, val);
+    color3s channel_col = val << (c * NB_BITS_CHANNEL);
+    //printf("In chann \t%d : %d\n", c, channel_col);
+    color = color|channel_col;
   }
   return color;
 }
 
 void putColor(pnm source, int i, int j, color3s color)
 {
-  for (int channel = 0; channel < NB_CHANNEL; channel++)
+  for (int c = 0; c < NB_CHANNEL; c++)
   {
-    unsigned short val = (color >> (channel * NB_BITS_CHANNEL)) & MASK_FIRST_CHANNEL;
-
-    printf("Out chann %d\n", val);
-    pnm_set_component(source, i, j, channel, val);
+    color3s channel_col = (color >> (c * NB_BITS_CHANNEL));
+    //printf("Out channel \t%d : %d\n", c, channel_col);
+    unsigned short val = channel_col & MASK_FIRST_CHANNEL;
+    //printf("Out val \t%d : %d\n", c, val);
+    pnm_set_component(source, i, j, c, val);
   }
 }
 
@@ -65,6 +67,8 @@ void process(int s,
     for (int j = 0; j < imsCols; j++)
     {
       color3s res = extractColor(ims, i, j);
+      printf("In %d\n", res);
+      /*
       for (int x = -hs; x < hs + 1; x++)
       {
         for (int y = -hs; y < hs + 1; y++)
@@ -79,8 +83,8 @@ void process(int s,
           printf("In %d\n", val);
           pf(&res, &val);
         }
-      }
-      printf("Out %d\n", res);
+      }*/
+      //printf("Out %d\n", res);
       putColor(imd, i, j, res);
     }
   }

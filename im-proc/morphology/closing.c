@@ -23,8 +23,8 @@ main(int argc, char* argv[])
   pnm tmp = pnm_new(pnm_get_width(source), pnm_get_height(source), PnmRawPpm);
   pnm output = pnm_new(pnm_get_width(source), pnm_get_height(source), PnmRawPpm);
 
-  process(se, hs, source, tmp, &minimum);
-  process(se, hs, tmp, output, &maximum);
+  process(se, hs, source, tmp, &maximum);
+  process(se, hs, tmp, output, &minimum);
 
   pnm_save(output, PnmRawPpm, argv[4]);
 

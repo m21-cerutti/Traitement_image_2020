@@ -7,7 +7,7 @@ void maximum(unsigned short *val, unsigned short *max)
 {
   if (*val > *max)
   {
-    *val = *max;
+    *max = *val;
   }
 }
 
@@ -15,7 +15,7 @@ void minimum(unsigned short *val, unsigned short *min)
 {
   if (*val < *min)
   {
-    *val = *min;
+    *min = *val;
   }
 }
 
@@ -51,7 +51,7 @@ void process(int s,
             continue;
 
           unsigned short val = pnm_get_component(ims, i + y, j + x, 0);
-          pf(&res, &val);
+          pf(&val, &res);
         }
       }
 

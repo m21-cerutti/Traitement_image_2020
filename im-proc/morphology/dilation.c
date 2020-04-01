@@ -22,8 +22,7 @@ main(int argc, char* argv[])
   pnm source = pnm_load(argv[3]);
   pnm output = pnm_new(pnm_get_width(source), pnm_get_height(source), PnmRawPpm);
 
-  //process(s, hs, source, output, &maximum); //Resultat et formule contradictoire
-  process(s, hs, source, output, &minimum);
+  process(s, hs, source, output, &maximum);
 
   pnm_save(output, PnmRawPpm, argv[4]);
 
