@@ -31,7 +31,9 @@ color3s extractColor(pnm source, int i, int j)
   for (int channel = 0; channel < NB_CHANNEL; channel++)
   {
     unsigned short val = pnm_get_component(source, i, j, channel);
-    color |= (val << channel* NB_BITS_CHANNEL);
+    color = (val << (channel * NB_BITS_CHANNEL)) | color;
+
+    //printf("In chann %d\n", val);
   }
   return color;
 }
@@ -42,7 +44,7 @@ void putColor(pnm source, int i, int j, color3s color)
   {
     unsigned short val = (color >> (channel * NB_BITS_CHANNEL)) & MASK_FIRST_CHANNEL;
 
-    printf("%d\n", val);
+    printf("Out chann %d\n", val);
     pnm_set_component(source, i, j, channel, val);
   }
 }
@@ -74,9 +76,11 @@ void process(int s,
             continue;
 
           color3s val = extractColor(ims, i + y, j + x);
+          printf("In %d\n", val);
           pf(&res, &val);
         }
       }
+      printf("Out %d\n", res);
       putColor(imd, i, j, res);
     }
   }
