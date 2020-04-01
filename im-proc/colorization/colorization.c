@@ -59,8 +59,8 @@ double LMS2LAB[3*3] = {
 
 void indexToPosition(int index, int *i, int *j, const int cols)
 {
-  *i = index / cols;
-  *j = index % cols;
+  *i = index % cols;
+  *j = index / cols;
 }
 
 int positionToIndex(int i, int j, const int cols)

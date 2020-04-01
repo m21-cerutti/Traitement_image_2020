@@ -85,7 +85,7 @@ void process(pnm ims)
 
   fprintf(stderr, "labeling: %d components found\n", l);
   memory_free(roots);
-  memory_free(ps);
+  //memory_free(ps); //munmap_chunk(): invalid pointer
 }
 
 void usage(char *s)

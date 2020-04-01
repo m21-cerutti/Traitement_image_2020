@@ -28,10 +28,10 @@
 //////////////////////////////////////
 // Utilities fonctions
 
-void indexToPosition(int index, int *i, int *j, const int rows)
+void indexToPosition(int index, int *i, int *j, const int cols)
 {
-  *i = index % rows;
-  *j = index / rows;
+  *i = index % cols;
+  *j = index / cols;
 }
 
 int positionToIndex(int i, int j, const int rows)
@@ -59,7 +59,7 @@ unsigned short *pnmToGray(pnm source, int *rows, int *cols)
   {
     unsigned short gray = 0;
     int i, j;
-    indexToPosition(index, &i, &j, *rows);
+    indexToPosition(index, &i, &j, *cols);
     for (int k = 0; k < 3; k++)
     {
       unsigned short val = pnm_get_component(source, i, j, k);
@@ -77,7 +77,7 @@ void grayToPnm(unsigned short *source, pnm dest, int rows, int cols)
   for (int index = 0; index < (rows * cols); index++)
   {
     int i, j;
-    indexToPosition(index, &i, &j, rows);
+    indexToPosition(index, &i, &j, cols);
     unsigned short gray = source[index];
     for (int k = 0; k < 3; k++)
     {
@@ -128,7 +128,7 @@ void floatToPnm(float *source, pnm dest, int rows, int cols)
   for (int index = 0; index < (rows * cols); index++)
   {
     int i, j;
-    indexToPosition(index, &i, &j, rows);
+    indexToPosition(index, &i, &j, cols);
     unsigned short gray = source[index] *255;
     
     for (int k = 0; k < 3; k++)
@@ -147,7 +147,7 @@ void centerImageFloat(float *source, float* dest, int rows, int cols)
   for (int index = 0; index < (rows * cols); index++)
   {
     int i, j;
-    indexToPosition(index, &i, &j, rows);
+    indexToPosition(index, &i, &j, cols);
     int newIndex = positionToIndex((i + middleRow)%rows, (j + middleCol) %cols, rows);
     tmp[newIndex] = source[index];
   }

@@ -8,10 +8,10 @@
 // Utilities fonctions
 #define Gaussian(sigma, k) exp(-((k)*(k))/(2.0*(sigma)*(sigma)))
 
-void indexToPosition(int index, int *i, int *j, const int rows)
+void indexToPosition(int index, int *i, int *j, const int cols)
 {
-  *i = index % rows;
-  *j = index / rows;
+  *i = index % cols;
+  *j = index / cols;
 }
 
 int positionToIndex(int i, int j, const int rows)

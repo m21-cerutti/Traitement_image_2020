@@ -9,10 +9,10 @@
 #include <pnm.h>
 #include <memory.h>
 
-void indexToPosition(int index, int *i, int *j, const int rows)
+void indexToPosition(int index, int *i, int *j, const int cols)
 {
-  *i = index % rows;
-  *j = index / rows;
+  *i = index % cols;
+  *j = index / cols;
 }
 
 int _find(int p, int *roots)
@@ -80,45 +80,45 @@ void process(pnm ims, char *imd)
       ps++;
     }
   }
+
   for (p = 0; p < w * h; p++)
     roots[p] = _find(p, roots);
   int l = 0;
+  for (p = 0; p < w * h; p++)
+  {
+    if (roots[p] == p)
+      roots[p] = l++;
+    else
+      roots[p] = roots[roots[p]];
+  }
+
+  fprintf(stderr, "labeling: %d components found\n", l);
+
+  unsigned short tableFalseColors[l * 3];
+  for (int i = 0; i < l; i += 3)
+  {
+    for (int c = 0; c < 3; c++)
+    {
+      tableFalseColors[i + c] = rand() % 255;
+    }
+  }
 
   for (p = 0; p < w * h; p++)
   {
     int i, j;
-    indexToPosition(p, &i, &j, h);
+    indexToPosition(p, &i, &j, w);
 
-    int val[3];
-    for (int c = 0; c < 3; c++)
-    {
-      val[c] = pnm_get_component(ims, i, j, c);
-    }
-
-    if (roots[p] == p)
-    {
-      printf("%d\n", l);
-      val[0] = 127;
-      val[1] = 057;
-      val[2] = 230;
-      roots[p] = l++;
-    }
-    else
-    {
-      roots[p] = roots[roots[p]];
-    }
+    int indConnex = roots[p];
 
     for (int c = 0; c < 3; c++)
     {
-      pnm_set_component(d, i, j, c, val[c]);
+      pnm_set_component(d, j, i, c, tableFalseColors[indConnex + c]);
     }
   }
 
   pnm_save(d, PnmRawPpm, imd);
-
-  fprintf(stderr, "labeling: %d components found\n", l);
   memory_free(roots);
-  memory_free(ps);
+  //memory_free(ps); //munmap_chunk(): invalid pointer
 }
 
 void usage(char *s)
