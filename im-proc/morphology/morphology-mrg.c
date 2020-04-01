@@ -67,6 +67,4 @@ void process(int s,
       }
     }
   }
-
-  puts(">> morphology.c");
 }
