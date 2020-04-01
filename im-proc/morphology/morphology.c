@@ -47,7 +47,7 @@ void process(int s,
             continue;
           }
 
-          if (pnm_get_component(shape, y + hs, x + hs, 0) != 255)
+          if (pnm_get_component(shape, y + hs, x + hs, 0) == 0)
             continue;
 
           unsigned short val = pnm_get_component(ims, i + y, j + x, 0);
@@ -61,6 +61,4 @@ void process(int s,
       }
     }
   }
-
-  puts(">> morphology.c");
 }

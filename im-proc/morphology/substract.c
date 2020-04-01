@@ -3,24 +3,23 @@
 
 #include <morphology.h>
 
-int
-grad(int a, int b)
+unsigned short sub(unsigned short a, unsigned short b)
 {
-  return a - b;
+  int res = (int)a - (int)b;
+  return (res < 0) ? 0 : res;
 }
 
-void
-usage(char* s)
+void usage(char *s)
 {
-  fprintf(stderr,"%s <ims-1> <ims-2> <imd>\n",s);
+  fprintf(stderr, "%s <ims-1> <ims-2> <imd>\n", s);
   exit(EXIT_FAILURE);
 }
 
 #define PARAM 3
-int
-main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
-  if(argc != PARAM+1) usage(argv[0]);
+  if (argc != PARAM + 1)
+    usage(argv[0]);
 
   pnm ims1 = pnm_load(argv[1]);
   pnm ims2 = pnm_load(argv[2]);
@@ -30,12 +29,13 @@ main(int argc, char* argv[])
 
   pnm output = pnm_new(imsRows, imsCols, PnmRawPpm);
 
-  for (int i = 0; i < imsRows; i++) {
-    for (int j = 0; j < imsCols; j++) {
-      int a = pnm_get_component(ims1, j, i, 0);
-      int b = pnm_get_component(ims2, j, i, 0);
-      int res = grad(a,b);
-      //int laplace = pnm_get_component(ims2, i, j, 0);
+  for (int i = 0; i < imsRows; i++)
+  {
+    for (int j = 0; j < imsCols; j++)
+    {
+      unsigned short a = pnm_get_component(ims1, j, i, 0);
+      unsigned short b = pnm_get_component(ims2, j, i, 0);
+      unsigned short res = sub(a, b);
       for (int channel = 0; channel < 3; channel++)
         pnm_set_component(output, j, i, channel, res);
     }

@@ -3,18 +3,17 @@
 
 #include <morphology.h>
 
-void
-usage(char* s)
+void usage(char *s)
 {
-  fprintf(stderr,"%s <se> <hs> <ims> <imd>\n",s);
+  fprintf(stderr, "%s <se> <hs> <ims> <imd>\n", s);
   exit(EXIT_FAILURE);
 }
 
 #define PARAM 4
-int
-main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
-  if(argc != PARAM+1) usage(argv[0]);
+  if (argc != PARAM + 1)
+    usage(argv[0]);
 
   int se = atoi(argv[1]);
   int hs = atoi(argv[2]);
@@ -22,7 +21,8 @@ main(int argc, char* argv[])
   pnm source = pnm_load(argv[3]);
   pnm output = pnm_new(pnm_get_width(source), pnm_get_height(source), PnmRawPpm);
 
-  process(se, hs, source, output, &minimum);
+  //process(se, hs, source, output, &minimum); //Resultat et formule contradictoire
+  process(se, hs, source, output, &maximum);
 
   pnm_save(output, PnmRawPpm, argv[4]);
 

@@ -8,15 +8,15 @@ process(int min, int max, char* ims, char* imd)
 {
   pnm input = pnm_load(ims);
 
-  int inputRows = pnm_get_width(input);
-  int inputCols = pnm_get_height(input);
+  int inputRows = pnm_get_height(input);
+  int inputCols = pnm_get_width(input);
 
-  pnm output = pnm_new(inputRows, inputCols, PnmRawPpm);
+  pnm output = pnm_new(inputCols, inputRows, PnmRawPpm);
 
   for (int i = 0; i < inputRows; i++) {
     for (int j = 0; j < inputCols; j++) {
 
-      int val = pnm_get_component(input, i, j, 0);
+      unsigned short val = pnm_get_component(input, i, j, 0);
       val = (val >= min && val <= max) ? 255 : 0;
       for (int channel = 0; channel < 3; channel++) {
         pnm_set_component(output, i, j, channel, val);
