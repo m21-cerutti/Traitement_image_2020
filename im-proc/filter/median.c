@@ -1,20 +1,20 @@
-#include <stdlib.h>
+ #include <stdlib.h>
 #include <stdio.h>
 
 #include <bcl.h>
 
 
 void
-process(int n, char *ims, char *imd)
+process(int halfsize, char *ims, char *imd)
 {
-  (void) n;
+  (void) halfsize;
   (void) ims;
   (void) imd;
 }
 
 void
 usage (char *s){
-  fprintf(stderr, "Usage: %s <n> <ims> <imd>\n", s);
+  fprintf(stderr, "Usage: %s <halfsize> <ims> <imd>\n", s);
   exit(EXIT_FAILURE);
 }
 

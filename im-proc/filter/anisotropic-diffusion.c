@@ -5,20 +5,21 @@
 
 
 void
-process(int n, char *ims, char *imd)
+process(int n, int lambda, char *ims, char *imd)
 {
   (void) n;
+  (void) lambda;
   (void) ims;
   (void) imd;
 }
 
 void
 usage (char *s){
-  fprintf(stderr, "Usage: %s <n> <ims> <imd>\n", s);
+  fprintf(stderr, "Usage: %s <n> <lambda> <function> <ims> <imd>\n", s);
   exit(EXIT_FAILURE);
 }
 
-#define PARAM 3
+#define PARAM 5
 int
 main(int argc, char *argv[]){
   if (argc != PARAM+1) usage(argv[0]);
