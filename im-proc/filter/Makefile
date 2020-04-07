@@ -3,9 +3,11 @@ ROOT=../bcl
 CPPFLAGS = -I. -I$(ROOT)/include
 CFLAGS   = -Wall -Wextra -Werror -pedantic -std=c99
 LDFLAGS  = -L$(ROOT)/lib
-LDLIBS   = -lm -lfftw3 -lbcl
+LDLIBS   = -lm -lbcl
 
-BIN=heat-equation\
+BIN=median\
+
+#heat-equation\
 	anisotropic-diffusion\
 	median\
 	bilateral\
@@ -16,7 +18,12 @@ BIN=heat-equation\
 .PHONY=all
 all: $(BIN)
 
-butterworth: fft.o
+#butterworth: fft.o
+
+test-median:
+	./median 1 ../data/barbara-impulse.ppm a.ppm
+	./median 2 ../data/barbara-impulse.ppm a.ppm
+	./median 3 ../data/barbara-impulse.ppm a.ppm
 
 .PHONY: clean cleanall
 clean:

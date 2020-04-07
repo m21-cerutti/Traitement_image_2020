@@ -8,94 +8,33 @@
 // Utilities fonctions
 #define Gaussian(sigma, k) exp(-((k)*(k))/(2.0*(sigma)*(sigma)))
 
-void indexToPosition(int index, int *i, int *j, const int cols)
-{
-  *i = index % cols;
-  *j = index / cols;
-}
-
-int positionToIndex(int i, int j, const int rows)
-{
-  return i * rows + j;
-}
-
-void swap (int* a, int* b)
-{
-  int t = *a;
-  *a = *b;
-  *b = t;
-}
-
-int split (int *V, int start, int end)
-{
-  int pivot =  V[end];
-  int i = start - 1;
-
-  for (int j = start; j <= end-1; j++) {
-    if (V[j] < pivot) {
-      i++;
-      swap(&V[i], &V[j]);
-    }
-  }
-  return i+1;
-}
-
-void
-quickSort(int *V, int start, int end)
-{
-  if (start < end)
-  {
-    int s = split (V, start, end);
-    quickSort(V, start, s-1);
-    quickSort(V, s+1, end);
-  }
+int cmpfunc (const void * a, const void * b) {
+   return ( *(int*)a - *(int*)b );
 }
 
 int
-median(int *V, int size)
+median(int* V, int size)
 {
-  quickSort(V, 0, size);
-  /*
-  for (int i = 0; i < size; i++) {
-    printf("%d\n", V[i]);
-  }
-  */
-  printf("mediane :%d -",V[size/2]);
+  qsort(V, size, sizeof(int), cmpfunc);
   return V[size/2];
-  /*
-  double median;
-  if (size%2 == 0) {
-    median = (V[size/2] + V[size/2 +1])/2;
-    return (int)median;
-    printf("median :%f -",median);
-  }
-  printf("mediane :%d -",V[size/2 +1]);
-  return V[size/2 +1];
-  */
 }
 
-void getNeighboor(int *N, int *nbNeighboor, int i, int j, int imsCols, int imsRows, int halfsize)
+void getNeighboor(int ip, int jp, int halfsize, pnm source, int rows, int cols, int *V, int *nbNeighboor)
 {
   int cpt = 0;
-  for (int x = -halfsize; x < halfsize+1; x++)
+
+  for (int i = ip - halfsize; i <= (ip + halfsize); i++)
   {
-    for (int y = -halfsize; y < halfsize+1; y++)
+    for (int j = jp - halfsize; j <= (jp + halfsize); j++)
     {
-      if ((i+y) >= imsRows || (i+y) < 0)
+      //Ignore border
+      if(i < 0  ||  i > rows || j <0 || j > cols)
         continue;
-      if ((j+x) >= imsCols || (j+x) < 0)
-        continue;
-      //printf("x:%d y:%d \n", x, y);
 
-      N[cpt] = positionToIndex(i+y,j+x,imsRows);
+      V[cpt] = pnm_get_component(source, i, j, 0);
       cpt++;
-
-      //printf("i+x:%d j+y:%d \n", i+x, j+y);
-      //printf("coucou 2\n");
-
     }
   }
-
   *nbNeighboor = cpt;
 }
 
@@ -118,7 +57,6 @@ bilateral(int sigma_s,int sigma_g, int* V, int cpt, int p)
 void
 process(int sigma_s, int sigma_g, char *ims, char *imd)
 {
-
   pnm input = pnm_load(ims);
 
   int imsRows = pnm_get_height(input);
@@ -126,18 +64,15 @@ process(int sigma_s, int sigma_g, char *ims, char *imd)
 
   pnm output = pnm_new(imsRows, imsCols, PnmRawPpm);
 
+  int nbNeighboor = 0;
+  int res;
+  int V[size*size];
+
   for (int i = 0; i < imsRows; i++)
   {
     for (int j = 0; j < imsCols; j++)
     {
-      int V[(2*halfsize+1)*(2*halfsize+1)];
-      int cpt = 0;
-      int res, x, y;
-      int V_value[cpt];
-
-      getNeighboor(V, &cpt, j, i, imsCols, imsRows, halfsize, pixel);
-      //printf("i:%d j:%d \n", i, j);
-
+      getNeighboor(i, j , halfsize, input, imsRows, imsCols, V, &nbNeighboor);
       res = bilateral(sigma_s, sigma_g, V, cpt);
       for (int channel = 0; channel < 3; channel++)
       {
