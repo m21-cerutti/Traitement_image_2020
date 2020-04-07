@@ -59,16 +59,17 @@ process(char* inp, char* out,
     int imsRows = pnm_get_height(input);
     int imsCols = pnm_get_width(input);
 
+    fftw_complex *freq_repr = forward(imsRows, imsCols, input);
+
+    for (int i = 0; i < imsRows*imsCols; i++)
+      // freq_repr[i] = apply(u, v, d0, n, w, u0, v0)
+      ;
+
+    unsigned short *newgray = backward(imsRows, imsCols, freq_repr);
+    grayToPnm(newgray, output, imsRows, imsCols);
     pnm output = pnm_new(imsRows, imsCols, PnmRawPpm);
 
     pnm_save(output, PnmRawPpm, out);
-
-  (void)d0;
-  (void)nx2;
-  (void)ww;
-  (void)u0;
-  (void)v0;
-  (void)apply;
 }
 
 void usage (char *s){
