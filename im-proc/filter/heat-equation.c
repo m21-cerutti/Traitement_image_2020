@@ -25,9 +25,9 @@ int positionToIndex(int i, int j, const int cols)
 #define NB_CORE ((2 * CORE_HSIZE + 1) * (2 * CORE_HSIZE + 1))
 
 double CoreHeat[NB_CORE] = {
-    0, 0.25, 0,
-    0.25, -1, 0.25,
-    0, 0.25, 0};
+    0, 1, 0,
+    1, -4, 1,
+    0, 1, 0};
 
 double convulutionPartialGray(pnm source, int i, int j, double core[], int halfsize)
 {
@@ -62,13 +62,12 @@ double convulutionPartialGray(pnm source, int i, int j, double core[], int halfs
 }
 
 //////////////////////
+#define TEMP_DISC 0.25 // <= 0.25
 
 void heat_equation(pnm source_n, int i, int j, pnm dest_np1)
 {
   unsigned short result = pnm_get_component(source_n, i, j, 0);
-  //Laplacian
-  result += (unsigned short)(convulutionPartialGray(source_n, i, j, CoreHeat, CORE_HSIZE));
-  //Trunc
+  result += (unsigned short)(TEMP_DISC * convulutionPartialGray(source_n, i, j, CoreHeat, CORE_HSIZE));
   result = MAX(MIN(result,255),0);
   for (int channel = 0; channel < 3; channel++)
   {
