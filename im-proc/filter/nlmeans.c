@@ -13,7 +13,10 @@
 
 double Gaussian(int sigma, double k)
 {
-  return (exp(-((k) * (k)) / (2.0 * (sigma) * (sigma))));
+  double g = exp(-k) / (2.0 * (sigma) * (sigma));
+  fprintf(stderr,"g:%lf\n",g);
+  fprintf(stderr,"k:%f exp(-k):%lf sigma:%d\n",k, exp(-k), sigma);
+  return g;
 }
 
 void indexToPosition(int index, int *i, int *j, const int cols)
@@ -22,9 +25,9 @@ void indexToPosition(int index, int *i, int *j, const int cols)
   *j = index % cols;
 }
 
-int positionToIndex(int i, int j, const int cols)
+int positionToIndex(int i, int j, const int rows)
 {
-  return i * cols + j;
+  return i * rows + j;
 }
 
 //////////////////////////////////////
@@ -59,12 +62,20 @@ float euclidian_dist(int p, int q, pnm source, int cols, int rows)
   for (int u = -R; u <= R; u++) {
     for (int v = -R; v <= R; v++) {
       //ignore border
-      if ((pi + u) >= rows || (pj + v) >= cols)
+      //fprintf(stderr,"cols:%d\n",cols);
+      //fprintf(stderr,"rows:%d\n",rows);
+      if ((pi + u) < 0 || (pi + u) >= rows)
         continue;
-      if ((qi + u) >= rows || (qj + v) >= cols)
+      //fprintf(stderr,"pi:%d\n",pi+u);
+      if ((pj + v) < 0 || (pj + v) >= cols)
         continue;
-      diff = pnm_get_component(source, pi + u, pj + v, 0)
-              - pnm_get_component(source, qi + u, qj + v, 0);
+      if ((qi + u) < 0 || (qi + u) >= rows)
+        continue;
+      //fprintf(stderr,"qi:%d\n",qi+u);
+      if ((qj + v) < 0 || (qj + v) >= cols)
+        continue;
+      diff = pnm_get_component(source, pi + u, pj + v, 0);
+      diff -= pnm_get_component(source, qi + u, qj + v, 0);
       res += diff*diff;
       n++;
     }
@@ -75,6 +86,7 @@ float euclidian_dist(int p, int q, pnm source, int cols, int rows)
 double weight(int sigma, int p, int q, pnm source, int cols, int rows)
 {
   double d = euclidian_dist(p, q, source, cols, rows);
+  fprintf(stderr,"res:%f\n",d);
   return Gaussian(sigma, d);
 }
 
@@ -84,15 +96,15 @@ unsigned short nlmeans(pnm source, int i, int j, int sigma, int cols, int rows, 
   double down = 0;
 
   int p = positionToIndex(i, j, cols);
-
   for (int i = 0; i < nbNeighbour; i++)
   {
     int q = V[i];
     int iq, jq;
-    indexToPosition(q, &iq, &jq, cols);
+    indexToPosition(q, &iq, &jq, rows);
     unsigned short pixel_q = pnm_get_component(source, iq, jq, 0);
 
     double common_factor = weight(sigma, p, q, source, cols, rows);
+    //fprintf(stderr,"w:%f",common_factor);
     up += common_factor * pixel_q;
     down += common_factor;
   }
@@ -115,8 +127,9 @@ void process(int sigma, char *ims, char *imd)
       int V[NB_CORE];
       int nbNeighboor = 0;
       getNeighboor(i, j, CORE_HSIZE, imsRows, imsCols, V, &nbNeighboor);
-      unsigned short res = nlmeans(input, i, j, imsCols, imsRows, sigma, V, nbNeighboor);
-
+      fprintf(stderr,"p : %d - ",pnm_get_component(input, i, j, 0));
+      unsigned short res = nlmeans(input, i, j, sigma, imsCols, imsRows, V, nbNeighboor);
+      fprintf(stderr,"p': %d\n",res);
       for (int channel = 0; channel < 3; channel++)
         pnm_set_component(output, i, j, channel, res);
     }
@@ -136,6 +149,6 @@ int main(int argc, char *argv[])
 {
   if (argc != PARAM + 1)
     usage(argv[0]);
-  process(atoi(argv[1]), argv[3], argv[4]);
+  process(atoi(argv[1]), argv[2], argv[3]);
   return EXIT_SUCCESS;
 }
