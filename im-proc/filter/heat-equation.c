@@ -23,15 +23,13 @@ process(int n, char *ims, char *imd)
   {
     for (int j = 0; j < imsCols; j++)
     {
+      int res = pnm_get_component(input, i, j, 0);
       for (int k = 0; k < n; k++) {
-        res = pnm_get_component(output, i, j, 0);
         //heat_equation();
       }
 
       for (int channel = 0; channel < 3; channel++)
-      {
         pnm_set_component(output, i, j, channel, res);
-      }
     }
   }
 
@@ -48,6 +46,7 @@ usage (char *s){
 int
 main(int argc, char *argv[]){
   if (argc != PARAM+1) usage(argv[0]);
-  process(0, NULL, NULL);
+  int n = atoi(argv[1]);
+  process(n, argv[2], argv[3]);
   return EXIT_SUCCESS;
 }

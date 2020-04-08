@@ -26,7 +26,9 @@ void getNeighboor(int ip, int jp, int halfsize, pnm source, int rows, int cols, 
 int
 euclidian_dist(int p, int q)
 {
-  
+  (void)p;
+  (void)q;
+  return 0;
 }
 
 int weight(int p, int q, int sigma)
@@ -35,14 +37,15 @@ int weight(int p, int q, int sigma)
 }
 
 int
-nmleans(int sigma, int p, int* V, int nbNeighboor)
+nlmeans(int sigma, int p, int* V, int nbNeighboor)
 {
   int up = 0;
   int down = 0;
   int common_factor = 0;
-  for (int i = 0; i < cpt; i++) {
+  int q = 0;
+  for (int i = 0; i < nbNeighboor; i++) {
     q = V[i];
-    common_factor = w(p,q,sigma);
+    common_factor = weight(p,q,sigma);
     up += common_factor * q;
     down += common_factor;
   }
@@ -61,6 +64,8 @@ process(int sigma, char *ims, char *imd)
 
   int nbNeighboor = 0;
   int res;
+  int halfsize = 1;
+  int size = (halfsize+1)*(halfsize+1);
   int V[size*size];
   int p = 0;
 
@@ -70,7 +75,7 @@ process(int sigma, char *ims, char *imd)
     {
       p = pnm_get_component(input, i, j, 0);
       getNeighboor(i, j , halfsize, input, imsRows, imsCols, V, &nbNeighboor);
-      res = nlmeans(sigma, V, nbNeighboor);
+      res = nlmeans(sigma, p,  V, nbNeighboor);
       for (int channel = 0; channel < 3; channel++)
       {
         pnm_set_component(output, i, j, channel, res);

@@ -8,14 +8,14 @@
 // Utilities fonctions
 #define Gaussian(sigma, k) exp(-((k)*(k))/(2.0*(sigma)*(sigma)))
 
-int cmpfunc (const void * a, const void * b) {
+int sortComparefunc (const void * a, const void * b) {
    return ( *(int*)a - *(int*)b );
 }
 
 int
 median(int* V, int size)
 {
-  qsort(V, size, sizeof(int), cmpfunc);
+  qsort(V, size, sizeof(int), sortComparefunc);
   return V[size/2];
 }
 
@@ -66,18 +66,20 @@ process(int sigma_s, int sigma_g, char *ims, char *imd)
 
   int nbNeighboor = 0;
   int res;
+  int halfsize = 1;
+  int size = (halfsize+1)*(halfsize+1);
   int V[size*size];
+  int p_value;
 
   for (int i = 0; i < imsRows; i++)
   {
     for (int j = 0; j < imsCols; j++)
     {
+      p_value = pnm_get_component(input, i, j, 0);
       getNeighboor(i, j , halfsize, input, imsRows, imsCols, V, &nbNeighboor);
-      res = bilateral(sigma_s, sigma_g, V, cpt);
+      res = bilateral(sigma_s, sigma_g, V, nbNeighboor, p_value);
       for (int channel = 0; channel < 3; channel++)
-      {
         pnm_set_component(output, i, j, channel, res);
-      }
     }
   }
 

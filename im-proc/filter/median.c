@@ -74,6 +74,7 @@ usage (char *s){
 int
 main(int argc, char *argv[]){
   if (argc != PARAM+1) usage(argv[0]);
-  process(0, NULL, NULL);
+  int halfsize = atoi(argv[1]);
+  process(halfsize, argv[2], argv[3]);
   return EXIT_SUCCESS;
 }

@@ -5,14 +5,12 @@ CFLAGS   = -Wall -Wextra -Werror -pedantic -std=c99
 LDFLAGS  = -L$(ROOT)/lib
 LDLIBS   = -lm -lbcl
 
-BIN=median\
-
-#heat-equation\
+BIN=heat-equation\
 	anisotropic-diffusion\
 	median\
 	bilateral\
 	nlmeans\
-	butterworth\
+	#butterworth\
 
 
 .PHONY=all
