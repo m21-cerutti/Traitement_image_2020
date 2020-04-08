@@ -3,8 +3,8 @@
 
 #include <bcl.h>
 
-#define MIN(a,b) (((a)<(b))?(a):(b))
-#define MAX(a,b) (((a)>(b))?(a):(b))
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
 //////////////////////
 
@@ -22,13 +22,12 @@ int positionToIndex(int i, int j, const int cols)
 //////////////////////
 
 #define CORE_HSIZE 1
-#define NB_CORE ((2*CORE_HSIZE+1) * (2*CORE_HSIZE+1))
+#define NB_CORE ((2 * CORE_HSIZE + 1) * (2 * CORE_HSIZE + 1))
 
 double CoreHeat[NB_CORE] = {
-    0, -1, 0,
-    -1, 4, -1,
-    0, -1, 0
-    };
+    0, 1, 0,
+    1, -4, 1,
+    0, 1, 0};
 
 double convulutionPartialGray(pnm source, int i, int j, double core[], int halfsize)
 {
@@ -36,9 +35,9 @@ double convulutionPartialGray(pnm source, int i, int j, double core[], int halfs
   int imsCols = pnm_get_width(source);
 
   double result = 0;
-  for (int x = -halfsize; x < halfsize + 1; x++)
+  for (int x = -halfsize; x <= halfsize; x++)
   {
-    for (int y = -halfsize; y < halfsize + 1; y++)
+    for (int y = -halfsize; y <= halfsize; y++)
     {
       int i_f = i + y;
       int j_f = j + x;
@@ -53,13 +52,12 @@ double convulutionPartialGray(pnm source, int i, int j, double core[], int halfs
         j_f = j - x;
       }
 
-      int coreIndex = positionToIndex(y, x, 2 * halfsize+1);
+      int coreIndex = positionToIndex(halfsize + y, halfsize + x, 2 * halfsize + 1);
       double contribution = core[coreIndex];
       unsigned short val = pnm_get_component(source, i_f, j_f, 0);
       result += contribution * val;
     }
   }
-  printf("%lf \n", result);
   return result;
 }
 
@@ -68,8 +66,9 @@ double convulutionPartialGray(pnm source, int i, int j, double core[], int halfs
 
 void heat_equation(pnm source_n, int i, int j, pnm dest_np1)
 {
-  unsigned short result = (unsigned short)(TEMP_DISC * convulutionPartialGray(source_n, i, j, CoreHeat, CORE_HSIZE));
-  result = MAX(MIN(result,254),0);
+  unsigned short result = pnm_get_component(source_n, i, j, 0);
+  result += (unsigned short)(TEMP_DISC * convulutionPartialGray(source_n, i, j, CoreHeat, CORE_HSIZE));
+  result = MAX(MIN(result,255),0);
   for (int channel = 0; channel < 3; channel++)
   {
     pnm_set_component(dest_np1, i, j, channel, result);
@@ -119,4 +118,3 @@ int main(int argc, char *argv[])
   process(n, argv[2], argv[3]);
   return EXIT_SUCCESS;
 }
-
