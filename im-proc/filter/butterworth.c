@@ -6,7 +6,17 @@
 #include <bcl.h>
 #include <fft.h>
 
+typedef float (*filter_func)(int, int, int, int, int, int, int);
+
 #define dist(u,v) sqrt((u*u) + (v*v))
+
+//////////////////////////////////////
+// Utilities fonctions
+
+int positionToIndex(int i, int j, const int rows)
+{
+  return i * rows + j;
+}
 
 float
 lowpass(int u, int v, int d0, int n, int w, int u0, int v0){
@@ -49,32 +59,56 @@ notch(int u, int v, int d0, int n, int w, int u0, int v0){
   return 1/(sqrt(pow(tmp,2*n)));
 }
 
+filter_func filterSelect(char* filter)
+{
+    if(strcmp(filter,"lp"))
+      return &lowpass;
+    if(strcmp(filter,"hp"))
+      return &highpass;
+    if(strcmp(filter,"br"))
+      return &bandreject;
+    if(strcmp(filter,"bp"))
+      return &bandpass;
+    if(strcmp(filter,"no"))
+      return &notch;
+    fprintf(stderr, "Wrong filter name\n");
+    return NULL;
+}
+
 void
-process(char* inp, char* out,
+process(char* in, char* out,
 	int d0, int nx2, int ww, int u0, int v0,
 	float (*apply)(int, int, int, int, int, int, int))
 {
-    pnm input = pnm_load(inp);
+  (void)d0;
+  (void)nx2;
+  (void)ww;
+  (void)u0;
+  (void)v0;
+  (void)apply;
+  pnm input = pnm_load(in);
 
-    int imsRows = pnm_get_height(input);
-    int imsCols = pnm_get_width(input);
+  int imsRows = pnm_get_height(input);
+  int imsCols = pnm_get_width(input);
 
-    //fftw_complex *freq_repr = forward(imsRows, imsCols, input);
+  pnm output = pnm_new(imsRows, imsCols, PnmRawPpm);
 
-    for (int i = 0; i < imsRows*imsCols; i++);
-      // freq_repr[i] = apply(u, v, d0, n, w, u0, v0);
-    (void)d0;
-    (void)nx2;
-    (void)ww;
-    (void)u0;
-    (void)v0;
-    (void)apply;
+  unsigned short *complexData = pnm_get_channel(input, NULL, 0);
+  fftw_complex * freq_repr = forward(imsRows, imsCols, complexData);
+  for (int u = 0; u < imsRows; u++) {
+    for (int v = 0; v < imsCols; v++) {
+      int index = positionToIndex(u,v,imsRows);
+      (void)index;
+      //freq_repr[index] = apply(u, v, d0, nx2, ww, u0, v0);
+    }
+  }
+  unsigned short *TcomplexData = backward(imsRows, imsCols, freq_repr);
 
-    //unsigned short *newgray = backward(imsRows, imsCols, freq_repr);
-    //grayToPnm(newgray, output, imsRows, imsCols);
-    pnm output = pnm_new(imsRows, imsCols, PnmRawPpm);
+  for (int channel = 0; channel < 3; channel++) {
+    pnm_set_channel(output, TcomplexData, channel);
+  }
 
-    pnm_save(output, PnmRawPpm, out);
+  pnm_save(output, PnmRawPpm, out);
 }
 
 void usage (char *s){
@@ -87,5 +121,14 @@ void usage (char *s){
 int
 main(int argc, char *argv[]){
   if (argc != PARAM+1) usage(argv[0]);
+
+  int d0 = atoi(argv[3]);
+  int n = atoi(argv[4]);
+  int w = atoi(argv[5]);
+  int u0 = atoi(argv[6]);
+  int v0 = atoi(argv[7]);
+  filter_func filter = filterSelect(argv[8]);
+
+  process(argv[1], argv[2], d0, n, w, u0, v0,filter);
   return EXIT_SUCCESS;
 }
