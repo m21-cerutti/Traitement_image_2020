@@ -4,56 +4,110 @@
 #include <math.h>
 #include <bcl.h>
 
-void getNeighboor(int ip, int jp, int halfsize, pnm source, int rows, int cols, int *V, int *nbNeighboor)
+#define CORE_HSIZE 5
+#define NB_CORE ((2 * CORE_HSIZE + 1) * (2 * CORE_HSIZE + 1))
+
+//////////////////////////////////////
+// Utilities fonctions
+
+void indexToPosition(int index, int *i, int *j, const int cols)
+{
+  *i = index / cols;
+  *j = index % cols;
+}
+
+int positionToIndex(int i, int j, const int cols)
+{
+  return i * cols + j;
+}
+
+//////////////////////////////////////
+
+void getNeighboor(int i, int j, int halfsize, int rows, int cols, int *V, int *nbNeighboor)
 {
   int cpt = 0;
 
-  for (int i = ip - halfsize; i <= (ip + halfsize); i++)
+  for (int x = -halfsize; x <= halfsize; x++)
   {
-    for (int j = jp - halfsize; j <= (jp + halfsize); j++)
+    for (int y = -halfsize; y <= halfsize; y++)
     {
-      //Ignore border
-      if(i < 0  ||  i > rows || j <0 || j > cols)
+      //Border ignored
+      if ((i + y) >= rows || (i + y) < 0 || (j + x) >= cols || (j + x) < 0)
+      {
         continue;
-
-      V[cpt] = pnm_get_component(source, i, j, 0);
+      }
+      int index = positionToIndex(i + y, j + x, cols);
+      V[cpt] = index;
       cpt++;
     }
   }
   *nbNeighboor = cpt;
 }
 
-int
-euclidian_dist(int p, int q)
+int euclidian_dist(int p, int q, pnm source)
 {
-  (void)p;
-  (void)q;
-  return 0;
+  int cols = pnm_get_height(source);
+  int rows = pnm_get_width(source);
+
+  int ip, jp, iq, jq;
+  indexToPosition(p, &ip, &jp, cols);
+  indexToPosition(q, &iq, &jq, cols);
+
+  double sum = 0;
+  int cpt = 0;
+  for (int x = -CORE_HSIZE; x <= CORE_HSIZE; x++)
+  {
+    for (int y = -CORE_HSIZE; y <= CORE_HSIZE; y++)
+    {
+      //Border ignored
+      if ((ip + y) >= rows || (ip + y) < 0 || (jp + x) >= cols || (jp + x) < 0)
+      {
+        continue; //p
+      }
+      if ((iq + y) >= rows || (iq + y) < 0 || (jq + x) >= cols || (jq + x) < 0)
+      {
+        continue; //q
+      }
+      unsigned short pixel_p = pnm_get_component(source, ip + y, jq + x, 0);
+      unsigned short pixel_q = pnm_get_component(source, iq + y, jq + x, 0);
+      sum += pixel_p - pixel_q;
+      cpt++;
+    }
+  }
+  return sum / cpt;
 }
 
-int weight(int p, int q, int sigma)
+double weight(int p, int q, int sigma, pnm source)
 {
-  return exp(-euclidian_dist(p,q))/(2*sigma*sigma);
+  return exp(-euclidian_dist(p, q, source)) / (2 * sigma * sigma);
 }
 
-int
-nlmeans(int sigma, int p, int* V, int nbNeighboor)
+//////////////////////////////////////
+
+unsigned short nlmeans(pnm source, int i, int j, int cols, int sigma, int *V, int nbNeighbour)
 {
-  int up = 0;
-  int down = 0;
-  int common_factor = 0;
-  int q = 0;
-  for (int i = 0; i < nbNeighboor; i++) {
-    q = V[i];
-    common_factor = weight(p,q,sigma);
-    up += common_factor * q;
+  double up = 0;
+  double down = 0;
+
+  int p = positionToIndex(i, j, cols);
+
+  for (int i = 0; i < nbNeighbour; i++)
+  {
+    int q = V[i];
+    int iq, jq;
+    indexToPosition(q, &iq, &jq, cols);
+    unsigned short pixel_q = pnm_get_component(source, iq, jq, 0);
+
+    double common_factor = weight(p, q, sigma, source);
+    up += common_factor * pixel_q;
     down += common_factor;
   }
-  return up/down;
+  return (unsigned short)(up / down);
 }
 
-void
-process(int sigma, char *ims, char *imd)
+//////////////////////////////////////
+
+void process(int sigma, char *ims, char *imd)
 {
   pnm input = pnm_load(ims);
 
@@ -62,20 +116,14 @@ process(int sigma, char *ims, char *imd)
 
   pnm output = pnm_new(imsRows, imsCols, PnmRawPpm);
 
-  int nbNeighboor = 0;
-  int res;
-  int halfsize = 1;
-  int size = (halfsize+1)*(halfsize+1);
-  int V[size*size];
-  int p = 0;
-
   for (int i = 0; i < imsRows; i++)
   {
     for (int j = 0; j < imsCols; j++)
     {
-      p = pnm_get_component(input, i, j, 0);
-      getNeighboor(i, j , halfsize, input, imsRows, imsCols, V, &nbNeighboor);
-      res = nlmeans(sigma, p,  V, nbNeighboor);
+      int V[NB_CORE];
+      int nbNeighboor = 0;
+      getNeighboor(i, j, CORE_HSIZE, imsRows, imsCols, V, &nbNeighboor);
+      unsigned short res = nlmeans(input, i, j, imsCols, sigma, V, nbNeighboor);
       for (int channel = 0; channel < 3; channel++)
       {
         pnm_set_component(output, i, j, channel, res);
@@ -86,16 +134,17 @@ process(int sigma, char *ims, char *imd)
   pnm_save(output, PnmRawPpm, imd);
 }
 
-void
-usage (char *s){
+void usage(char *s)
+{
   fprintf(stderr, "Usage: %s <sigma> <ims> <imd>\n", s);
   exit(EXIT_FAILURE);
 }
 
 #define PARAM 3
-int
-main(int argc, char *argv[]){
-  if (argc != PARAM+1) usage(argv[0]);
+int main(int argc, char *argv[])
+{
+  if (argc != PARAM + 1)
+    usage(argv[0]);
   process(atoi(argv[1]), argv[2], argv[3]);
   return EXIT_SUCCESS;
 }

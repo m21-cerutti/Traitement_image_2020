@@ -4,7 +4,7 @@
 #include <bcl.h>
 #include <math.h>
 
-#define CORE_HSIZE 10
+#define CORE_HSIZE 5
 #define NB_CORE ((2 * CORE_HSIZE + 1) * (2 * CORE_HSIZE + 1))
 
 //////////////////////////////////////
@@ -48,7 +48,7 @@ void getNeighboor(int i, int j, int halfsize, int rows, int cols, int *V, int *n
   *nbNeighboor = cpt;
 }
 
-unsigned short bilateral(pnm source, int i, int j, int cols, int sigma_s, int sigma_g, int *V, int cpt)
+unsigned short bilateral(pnm source, int i, int j, int cols, int sigma_s, int sigma_g, int *V, int nbNeighbour)
 {
   double up = 0;
   double down = 0;
@@ -56,7 +56,7 @@ unsigned short bilateral(pnm source, int i, int j, int cols, int sigma_s, int si
   int p = positionToIndex(i, j, cols);
   unsigned short pixel_p = pnm_get_component(source, i, j, 0);
 
-  for (int i = 0; i < cpt; i++)
+  for (int i = 0; i < nbNeighbour; i++)
   {
     int q = V[i];
     int iq, jq;
