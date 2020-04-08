@@ -3,7 +3,7 @@ ROOT=../bcl
 CPPFLAGS = -I. -I$(ROOT)/include
 CFLAGS   = -Wall -Wextra -pedantic -std=c99 #-Werror
 LDFLAGS  = -L$(ROOT)/lib
-LDLIBS   = -lm -lbcl -lfftw3
+LDLIBS   = -lbcl -lfftw3 -lm
 
 BIN=heat-equation\
 	anisotropic-diffusion\

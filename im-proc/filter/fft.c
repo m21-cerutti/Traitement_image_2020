@@ -4,86 +4,64 @@
 
 #include <fft.h>
 
-#define REAL 0
-#define IMAG 1
-
-fftw_complex *
-forward(int rows, int cols, unsigned short* g_img)
+void execFFT(int rows, int cols, fftw_complex* grayImage, fftw_complex* spectrum, int mode)
 {
-  //Construction de l'image complexe
-  fftw_complex *forward = malloc(rows*cols*sizeof(fftw_complex));
-  for (int i = 0; i < rows * cols; i++) {
-      forward[i] = g_img[i] + I * 0;
+  fftw_plan plan = fftw_plan_dft_2d(rows, cols, grayImage, spectrum, mode, FFTW_ESTIMATE);
+  fftw_execute(plan);
+	fftw_destroy_plan(plan);
+  fftw_cleanup();
+}
+
+fftw_complex *forward(int rows, int cols, unsigned short* g_img)
+{
+  fftw_complex grayImage[rows*cols];
+  for (int i =0; i<(rows*cols) ; i++)
+  {
+      grayImage[i] = (double)g_img[i];
+  }
+  int size = sizeof(fftw_complex)*rows*cols;
+  fftw_complex *spectrum = (fftw_complex *)malloc(size);
+  execFFT(rows, cols, grayImage, spectrum, FFTW_FORWARD);
+  return spectrum;
+}
+
+unsigned short *backward(int rows, int cols, fftw_complex* freq_repr)
+{
+  fftw_complex grayImage[rows*cols];
+  execFFT(rows, cols, freq_repr, grayImage, FFTW_BACKWARD);
+  unsigned short *grayReal = malloc(sizeof(unsigned short)*rows*cols);
+  for (int i = 0; i<(rows*cols); i++)
+  {
+    float value = crealf(grayImage[i])/(rows*cols);
+    if (value > 255.f)
+    {
+      value = 255.f;
     }
-
-
-  //Allocation de structure donnees complexes de meme taille que img source
-  fftw_complex *complexData = malloc(rows*cols*sizeof(fftw_complex));
-
-  //Initialisation et calcul de la transformé
-	  fftw_plan plan = fftw_plan_dft_2d(rows,
-                                cols,
-                                forward,
-                                complexData,
-                                FFTW_FORWARD,
-                                FFTW_ESTIMATE);
-  fftw_execute(plan);
-  fftw_destroy_plan(plan);
-
-  //Libération espace mémoire
-  free(forward);
-
-  return (complexData);
-}
-
-unsigned short *
-backward(int rows, int cols, fftw_complex* freq_repr)
-{
-  //Allocation de structure donnees
-  fftw_complex *complexData = malloc(rows*cols*sizeof(fftw_complex));
-
-  //Initialisation et calcul de la transformé
-  fftw_plan plan = fftw_plan_dft_2d(rows,
-                                cols,
-                                freq_repr,
-                                complexData,
-                                FFTW_BACKWARD,
-                                FFTW_ESTIMATE);
-  fftw_execute(plan);
-  fftw_destroy_plan(plan);
-
-  double N = (double) rows * cols;
-	unsigned short* backward = malloc(rows * cols * sizeof(unsigned short));
-  for (int j = 0; j < rows * cols; j++) {
-      //double val =
-      backward[j] = creal(complexData[j]) / N;
+    if (value < 0.f)
+    {
+      value = 0.f;
+    }
+    grayReal[i] = (unsigned short)value;
   }
 
-  free(complexData);
-  return backward;
+  return grayReal;
 }
 
-void
-freq2spectra(int rows, int cols, fftw_complex* freq_repr, float* as, float* ps)
+void freq2spectra(int rows, int cols, fftw_complex* freq_repr, float* as, float* ps) 
 {
-  for (int i = 0; i < rows*cols; i++) {
-    fftw_complex c = freq_repr[i];
-
-    double re = creal(c);
-    double im = cimag(c);
-
-    as[i] = sqrt(re*re + im*im);
-    ps[i] = cimag(c);
+	for(int i=0; i<rows*cols; i++)
+  {
+		as[i]= cabsf(freq_repr[i]);
+		ps[i]= cargf(freq_repr[i]);
   }
 }
 
-void
-spectra2freq(int rows, int cols, float* as, float* ps, fftw_complex* freq_repr)
+void spectra2freq(int rows, int cols, float* as, float* ps, fftw_complex* freq_repr)
 {
-  for (int i = 0; i < rows*cols; i++) {
-    double im = ps[i];
-    double re = as[i] * cos(im);
-
-    freq_repr[i] = im + I*re;
+ for(int i=0; i<rows*cols; i++)
+  {
+		float r = as[i];
+		float phi = ps[i];
+    freq_repr[i] = r*cosf(phi) + I * r * sinf(phi);
   }
 }
