@@ -66,7 +66,9 @@ double convulutionPartialGray(pnm source, int i, int j, double core[], int halfs
 void heat_equation(pnm source_n, int i, int j, pnm dest_np1)
 {
   unsigned short result = pnm_get_component(source_n, i, j, 0);
+  //Laplacian
   result += (unsigned short)(convulutionPartialGray(source_n, i, j, CoreHeat, CORE_HSIZE));
+  //Trunc
   result = MAX(MIN(result,255),0);
   for (int channel = 0; channel < 3; channel++)
   {
