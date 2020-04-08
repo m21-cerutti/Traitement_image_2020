@@ -4,7 +4,7 @@
 #include <bcl.h>
 #include <math.h>
 
-#define CORE_HSIZE 1
+#define CORE_HSIZE 10
 #define NB_CORE ((2 * CORE_HSIZE + 1) * (2 * CORE_HSIZE + 1))
 
 //////////////////////////////////////
