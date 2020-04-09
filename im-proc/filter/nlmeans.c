@@ -4,20 +4,12 @@
 #include <bcl.h>
 #include <math.h>
 
-#define CORE_HSIZE 11
+#define CORE_HSIZE 5
 #define NB_CORE ((2 * CORE_HSIZE + 1) * (2 * CORE_HSIZE + 1))
-#define R 7
+#define R 3
 
 //////////////////////////////////////
 // Utilities fonctions
-
-double Gaussian(int sigma, double k)
-{
-  double g = exp(-k) / (2.0 * (sigma) * (sigma));
-  fprintf(stderr,"g:%lf\n",g);
-  fprintf(stderr,"k:%f exp(-k):%lf sigma:%d\n",k, exp(-k), sigma);
-  return g;
-}
 
 void indexToPosition(int index, int *i, int *j, const int cols)
 {
@@ -80,7 +72,15 @@ float euclidian_dist(int p, int q, pnm source, int cols, int rows)
       n++;
     }
   }
-  return res/n;
+  return -res/n;
+}
+
+double weight(int sigma, double k)
+{
+  double g = exp(-k) / (2.0 * (sigma) * (sigma));
+  //fprintf(stderr,"g:%lf\n",g);
+  //fprintf(stderr,"k:%f exp(-k):%lf sigma:%d\n",k, exp(-k), sigma);
+  return g;
 }
 
 double weight(int sigma, int p, int q, pnm source, int cols, int rows)
