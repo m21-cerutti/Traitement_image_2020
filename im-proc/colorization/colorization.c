@@ -313,10 +313,13 @@ void transfer(Pixel greyLuminance, Pixel ColorAB, Pixel *imdLAB, int index)
 void process(char *ims, char *imt, char* imd){
   pnm imsInput = pnm_load(ims);
 
+	printf("Input\n");
   int imsRows = pnm_get_height(imsInput);
   int imsCols = pnm_get_width(imsInput);
   Pixel* imsColors = (Pixel*)malloc(sizeof(Pixel) * imsRows * imsCols);
   pnmToImageArray(imsInput, imsColors, imsRows, imsCols);
+
+	printf("Lab\n");
   Pixel* imsLAB= (Pixel*)malloc(sizeof(Pixel)* imsRows * imsCols);
   rgbToLab(imsColors, imsLAB, imsRows, imsCols);
 
@@ -328,12 +331,14 @@ void process(char *ims, char *imt, char* imd){
   pnmToImageArray(imtInput, imtColors, imtRows, imtCols);
   Pixel* imtLAB = (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
   rgbToLab(imtColors, imtLAB, imtRows, imtCols);
-
+  
+	printf("Jittered\n");
   //Jittered grid
   int* jitteredGrid = (int*)malloc(sizeof(int)* NB_JITTERED_SAMPLE);
 
   jitteredSelect(jitteredGrid, imsRows, imsCols);
 
+	printf("Stats Jittered\n");
   //Stats jittered
   double means[NB_CHANNELS], vars[NB_CHANNELS];
   Pixel_Stats *jitteredStats = (Pixel_Stats*)malloc(sizeof(Pixel_Stats)* NB_JITTERED_SAMPLE);
@@ -344,6 +349,7 @@ void process(char *ims, char *imt, char* imd){
     jitteredStats[p].data[1] = vars[0];
   }
 
+	printf("Stats Grey\n");
   //Stats grey
   Pixel_Stats *imtStats = (Pixel_Stats*)malloc(sizeof(Pixel_Stats)* imtRows * imtCols);
   for (int index = 0; index < (imtRows * imtCols); index++)
@@ -357,6 +363,7 @@ void process(char *ims, char *imt, char* imd){
   Pixel* imdLAB = (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
   Pixel* imdColors = (Pixel*)malloc(sizeof(Pixel)* imtRows * imtCols);
 
+	printf("Best\n");
   for (int index = 0; index < imtRows * imtCols; index++) {
 
     /// Idée Trier jitteredGrid par les valeur de jitteredStats et faire une recherche dichotomique du plus proche.
@@ -369,6 +376,7 @@ void process(char *ims, char *imt, char* imd){
 
   }
 
+	printf("Reconvert\n");
   //Reconvert
   labToRGB(imdLAB, imdColors, imtRows, imtCols);
 
