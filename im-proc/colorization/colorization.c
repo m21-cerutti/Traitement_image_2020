@@ -271,8 +271,8 @@ void jitteredSelect(int *jitteredGrid, int rows, int cols )
     for (int j = offsetX; j < cols; j+=offsetX)
     {
       //Random distribution
-      int newi = i + (int)randInRange(-offsetY/2., offsetY/2.);
-      int newj = j + (int)randInRange(-offsetY/2., offsetY/2.);
+      int newi = i + (int)randInRange(-offsetY/4., offsetY/4.);
+      int newj = j + (int)randInRange(-offsetY/4., offsetY/4.);
 
       int index = positionToIndex(newi, newj, cols);
       jitteredGrid[p] = index;
